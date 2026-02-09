@@ -58,50 +58,43 @@
     const viewBox = { minX: -11.1, minY: -3.1, width: 47.2, height: 39.2 };
     let maskCanvas, maskCtx, colorCanvas, colorCtx, maskData, maskStrokeWidth = 3;
     
-    // 省份中心点和边界框 (SVG 坐标)
-    // bounds: [minX, minY, maxX, maxY]
-    const provinceData = {
-        '新疆': { center: [-4.5, 9.9], bounds: [-14.0, 2.0, 5.0, 17.7] },
-        '西藏': { center: [-1.3, 20.6], bounds: [-9.9, 15.5, 7.3, 25.7] },
-        '青海': { center: [4.9, 16.6], bounds: [-0.8, 12.6, 10.6, 20.6] },
-        '甘肃': { center: [8.4, 14.2], bounds: [1.6, 8.8, 15.3, 19.6] },
-        '内蒙古': { center: [17.7, 6.0], bounds: [5.7, -2.4, 29.7, 14.5] },
-        '黑龙江': { center: [31.4, 2.7], bounds: [25.6, -2.6, 37.2, 8.1] },
-        '吉林': { center: [30.0, 7.9], bounds: [26.0, 5.1, 34.0, 10.8] },
-        '辽宁': { center: [26.6, 10.6], bounds: [23.7, 8.0, 29.4, 13.1] },
-        '宁夏': { center: [13.0, 14.6], bounds: [11.6, 12.4, 14.4, 16.8] },
-        '陕西': { center: [15.0, 16.3], bounds: [12.6, 12.2, 17.4, 20.5] },
-        '山西': { center: [18.3, 14.2], bounds: [16.5, 11.0, 20.1, 17.5] },
-        '河北': { center: [21.9, 12.4], bounds: [19.2, 9.0, 24.5, 15.9] },
-        '北京': { center: [21.7, 11.5], bounds: [20.8, 10.6, 22.6, 12.3] },
-        '天津': { center: [22.5, 12.4], bounds: [21.9, 11.5, 23.0, 13.3] },
-        '山东': { center: [23.6, 15.6], bounds: [20.3, 13.5, 26.9, 17.7] },
-        '河南': { center: [19.2, 18.2], bounds: [16.6, 15.6, 21.8, 20.9] },
-        '江苏': { center: [23.9, 19.2], bounds: [21.6, 16.9, 26.3, 21.5] },
-        '安徽': { center: [22.4, 20.2], bounds: [20.4, 17.4, 24.3, 23.0] },
-        '上海': { center: [25.9, 21.0], bounds: [25.3, 20.3, 26.4, 21.6] },
-        '浙江': { center: [25.0, 23.2], bounds: [23.0, 21.1, 27.0, 25.4] },
-        '福建': { center: [23.1, 26.6], bounds: [21.2, 24.1, 25.0, 29.2] },
-        '江西': { center: [21.3, 25.2], bounds: [19.3, 22.2, 23.4, 28.2] },
-        '湖北': { center: [18.2, 21.1], bounds: [15.0, 18.9, 21.4, 23.4] },
-        '湖南': { center: [17.6, 25.1], bounds: [15.3, 22.2, 19.9, 28.0] },
-        '广东': { center: [19.2, 29.9], bounds: [16.0, 27.1, 22.3, 32.7] },
-        '广西': { center: [14.9, 29.0], bounds: [11.7, 26.2, 18.0, 31.8] },
-        '海南': { center: [16.2, 33.8], bounds: [15.2, 32.8, 17.2, 34.9] },
-        '四川': { center: [10.5, 22.1], bounds: [5.8, 17.8, 15.1, 26.5] },
-        '重庆': { center: [14.5, 22.1], bounds: [12.4, 20.0, 16.5, 24.3] },
-        '贵州': { center: [13.5, 25.6], bounds: [11.0, 23.2, 16.0, 28.0] },
-        '云南': { center: [9.6, 27.4], bounds: [6.0, 23.2, 13.2, 31.7] },
-        '台湾': { center: [26.3, 28.8], bounds: [24.2, 26.6, 28.4, 30.9] },
-        '香港': { center: [19.8, 30.4], bounds: [19.5, 30.2, 20.0, 30.6] },
-        '澳门': { center: [19.3, 30.6], bounds: [19.3, 30.6, 19.3, 30.7] },
+    // 种子点 - 每个省份内部的一个点，用于 flood fill
+    const seeds = {
+        '新疆': [-4.5, 7.5],
+        '西藏': [-2.5, 18.5],
+        '青海': [6.0, 15.5],
+        '甘肃': [10.0, 10.5],
+        '宁夏': [20.5, 15.5],
+        '内蒙古': [18.0, 6.0],
+        '黑龙江': [31.5, 3.0],
+        '吉林': [30.0, 8.5],
+        '辽宁': [28.5, 14.0],
+        '河北': [23.5, 15.0],
+        '北京': [24.5, 12.5],
+        '天津': [25.5, 11.5],
+        '山西': [18.5, 18.0],
+        '陕西': [15.0, 18.5],
+        '山东': [26.5, 19.0],
+        '河南': [21.5, 20.0],
+        '江苏': [25.0, 22.0],
+        '安徽': [21.0, 23.0],
+        '上海': [26.8, 24.5],
+        '浙江': [25.0, 27.0],
+        '福建': [24.0, 30.0],
+        '江西': [20.0, 27.5],
+        '湖北': [17.5, 23.5],
+        '湖南': [16.5, 27.0],
+        '广东': [23.0, 30.0],
+        '广西': [10.0, 30.0],
+        '海南': [18.5, 35.0],
+        '四川': [10.5, 22.0],
+        '重庆': [17.5, 22.5],
+        '贵州': [16.0, 27.5],
+        '云南': [2.0, 22.0],
+        '台湾': [30.0, 30.0],
+        '香港': [23.5, 31.5],
+        '澳门': [21.5, 32.5]
     };
-    
-    // 从 provinceData 生成 seeds（用于 flood fill）
-    const seeds = {};
-    for (const name in provinceData) {
-        seeds[name] = provinceData[name].center;
-    }
 
     // 网站标题
     const siteTitle = document.title;
@@ -111,8 +104,6 @@
      * 初始化
      */
     function init() {
-        console.log('[DEBUG] init 开始');
-        
         // 准备画布
         setupCanvas();
 
@@ -139,37 +130,14 @@
         colorCtx = colorCanvas.getContext('2d');
         maskCtx = maskCanvas.getContext('2d');
 
-        // 依据父容器大小设置，保持与 SVG 相同的宽高比
+        // 依据父容器大小设置
         const wrapper = document.querySelector('.map-wrapper');
-        const wrapperWidth = wrapper.clientWidth;
-        const wrapperHeight = wrapper.clientHeight;
-        
-        // SVG 的原始宽高比
-        const svgAspectRatio = viewBox.width / viewBox.height; // 47.2 / 39.2
-        const wrapperAspectRatio = wrapperWidth / wrapperHeight;
-        
-        let width, height;
-        if (wrapperAspectRatio > svgAspectRatio) {
-            // 容器更宽，以高度为准
-            height = wrapperHeight;
-            width = height * svgAspectRatio;
-        } else {
-            // 容器更高，以宽度为准
-            width = wrapperWidth;
-            height = width / svgAspectRatio;
-        }
-        
+        const width = wrapper.clientWidth;
+        const height = wrapper.clientHeight;
         colorCanvas.width = width;
         colorCanvas.height = height;
         maskCanvas.width = width;
         maskCanvas.height = height;
-        
-        // Canvas 居中并设置显示尺寸
-        colorCanvas.style.position = 'absolute';
-        colorCanvas.style.left = ((wrapperWidth - width) / 2) + 'px';
-        colorCanvas.style.top = ((wrapperHeight - height) / 2) + 'px';
-        colorCanvas.style.width = width + 'px';
-        colorCanvas.style.height = height + 'px';
 
         // 绘制边界到掩膜
         maskCtx.clearRect(0, 0, width, height);
@@ -362,20 +330,12 @@
     function bindEvents() {
         // 点击地区 - 通过透明点击层
         const clickLayer = document.getElementById('clickLayer');
-        
-        if (!clickLayer) {
-            console.error('clickLayer 元素不存在');
-            return;
-        }
-        
         clickLayer.addEventListener('click', function(e) {
-            // 将点击坐标转换为 SVG 世界坐标，然后找最近的省
-            const svgCoord = screenToWorld(e.clientX, e.clientY);
-            const areaName = findNearestProvince(svgCoord.x, svgCoord.y);
-            
+            const pt = getRelativePosition(e);
+            const areaName = pickArea(pt.x, pt.y);
             if (areaName) {
                 currentTarget = { id: areaName };
-                showForm({ id: areaName, clientX: e.clientX, clientY: e.clientY });
+                showForm({ id: areaName });
             }
         });
 
@@ -417,89 +377,11 @@
                 return;
             }
             
-            // 点击其他地方关闭表单（但排除 clickLayer，因为它会打开新表单）
-            if (!target.closest('#form') && target.id !== 'clickLayer') {
+            // 点击其他地方关闭表单
+            if (!target.closest('#form')) {
                 closeForm();
             }
         });
-    }
-
-    /**
-     * 屏幕坐标转 SVG 世界坐标
-     */
-    function screenToWorld(clientX, clientY) {
-        const svg = document.getElementById('svg');
-        const rect = svg.getBoundingClientRect();
-        // 相对于 SVG 元素的位置（0-1）
-        const relX = (clientX - rect.left) / rect.width;
-        const relY = (clientY - rect.top) / rect.height;
-        // 转换为 viewBox 坐标
-        const x = viewBox.minX + relX * viewBox.width;
-        const y = viewBox.minY + relY * viewBox.height;
-        return { x, y };
-    }
-
-    /**
-     * 根据世界坐标找最近的省份
-     * 优先级：1. 小省份精确匹配（面积小的优先）2. 边界框匹配 3. 最近中心点
-     */
-    function findNearestProvince(x, y) {
-        // 小省份列表（需要精确匹配，优先级最高）
-        const smallProvinces = ['北京', '天津', '上海', '香港', '澳门', '宁夏'];
-        
-        // 首先检查小省份（边界框必须完全匹配）
-        for (const name of smallProvinces) {
-            const data = provinceData[name];
-            if (!data) continue;
-            const [minX, minY, maxX, maxY] = data.bounds;
-            if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                return name;
-            }
-        }
-        
-        // 收集所有边界框包含该点的省份
-        const candidates = [];
-        for (const name in provinceData) {
-            if (smallProvinces.includes(name)) continue; // 已检查过
-            const data = provinceData[name];
-            const [minX, minY, maxX, maxY] = data.bounds;
-            if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                const [cx, cy] = data.center;
-                const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-                // 计算边界框面积，面积越小优先级越高
-                const area = (maxX - minX) * (maxY - minY);
-                candidates.push({ name, dist, area });
-            }
-        }
-        
-        if (candidates.length > 0) {
-            // 按面积排序（小的优先），面积相同则按距离
-            candidates.sort((a, b) => {
-                // 面积差距大于50%时按面积排序
-                if (Math.abs(a.area - b.area) / Math.max(a.area, b.area) > 0.5) {
-                    return a.area - b.area;
-                }
-                // 否则按距离排序
-                return a.dist - b.dist;
-            });
-            return candidates[0].name;
-        }
-        
-        // 没有匹配的边界框，用最近中心点（兜底）
-        let minDist = Infinity;
-        let nearest = null;
-        for (const name in provinceData) {
-            const [cx, cy] = provinceData[name].center;
-            const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = name;
-            }
-        }
-        
-        // 如果距离太远，说明点击在地图外
-        if (minDist > 10) return null;
-        return nearest;
     }
 
     /**
@@ -529,11 +411,8 @@
      */
     function showForm(elem) {
         const form = document.getElementById('form');
-        
-        if (!form) {
-            console.error('form 元素不存在');
-            return;
-        }
+        const svgRect = document.getElementById('svg').getBoundingClientRect();
+        const rect = elem.getBoundingClientRect ? elem.getBoundingClientRect() : svgRect;
         
         // 设置标题
         const titleLang = form.querySelector('.title .lang');
@@ -544,9 +423,9 @@
         const searchQuery = '中国 ' + (areas[elem.id].name || elem.id) + ' 旅游景点';
         searchLink.href = 'https://www.baidu.com/s?wd=' + encodeURIComponent(searchQuery);
         
-        // 使用传入的点击坐标来定位表单
-        let left = elem.clientX || window.innerWidth / 2;
-        let top = elem.clientY || window.innerHeight / 2;
+        // 计算位置
+        let left = rect.left + rect.width / 2;
+        let top = rect.top + rect.height / 2;
         
         // 确保表单不超出屏幕
         const formWidth = 180;
