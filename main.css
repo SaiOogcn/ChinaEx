@@ -1,0 +1,371 @@
+/* ChinaEx 制省等级 - 样式表 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif;
+  background: #9dc3fb;
+}
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+#svg {
+  position: absolute;
+  inset: 0;
+  background: #9dc3fb;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+#colorCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#clickLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  cursor: pointer;
+}
+
+#maskCanvas.hidden {
+  display: none;
+}
+
+#author {
+  cursor: pointer;
+}
+
+/* 颜色等级 */
+.red, [level="5"] {
+  fill: #e84c3d;
+}
+
+.orange, [level="4"] {
+  fill: #d58337;
+}
+
+.yellow, [level="3"] {
+  fill: #f3c218;
+}
+
+.green, [level="2"] {
+  fill: #30cc70;
+}
+
+.blue, [level="1"] {
+  fill: #3598db;
+}
+
+.white, [level="0"] {
+  fill: #ffffff;
+}
+
+/* 导航栏 */
+.nav-group {
+  position: absolute;
+  overflow: hidden;
+  top: 0.75em;
+  left: 1em;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.nav-group .link {
+  display: inline-block;
+  padding: 8px 16px;
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-group .level-display {
+  font-weight: 600;
+}
+
+#level-text {
+  color: #e84c3d;
+  font-size: 1.2em;
+}
+
+/* 等级选择表单 */
+.form {
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  max-width: 200px;
+  min-width: 160px;
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  transition: opacity 0.3s;
+  opacity: 0;
+  z-index: -1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.form.show {
+  opacity: 1;
+  z-index: 99;
+}
+
+.form .title {
+  background: #efefef;
+  padding: 8px 12px;
+  position: relative;
+}
+
+.form .title .lang {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form .title .icon-group {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 0 8px;
+}
+
+.form .title .icon-group .icon {
+  line-height: 30px;
+  padding: 0 6px;
+  color: #bbb;
+  cursor: pointer;
+  display: inline-block;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.form .title .icon-group .icon.search:hover {
+  color: #3e6ffe;
+}
+
+.form .title .icon-group .icon.close:hover {
+  color: #666;
+}
+
+.form .label {
+  font-weight: normal;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: block;
+  font-size: 12px;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.form .label:last-child {
+  border-bottom: none;
+}
+
+.form .label:hover,
+.form .label.selected {
+  background: #eaeaea;
+}
+
+.form .label.red:hover,
+.form .label.red.selected {
+  background: #e84c3d;
+  color: #fff;
+}
+
+.form .label.orange:hover,
+.form .label.orange.selected {
+  background: #d58337;
+  color: #fff;
+}
+
+.form .label.yellow:hover,
+.form .label.yellow.selected {
+  background: #f3c218;
+}
+
+.form .label.green:hover,
+.form .label.green.selected {
+  background: #30cc70;
+  color: #fff;
+}
+
+.form .label.blue:hover,
+.form .label.blue.selected {
+  background: #3598db;
+  color: #fff;
+}
+
+.form .label.white:hover,
+.form .label.white.selected {
+  background: #f5f5f5;
+}
+
+/* 底部操作按钮 */
+.share {
+  position: absolute;
+  bottom: 0.75em;
+  right: 1em;
+  text-align: right;
+  z-index: 10;
+}
+
+.share .btn {
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  color: #333;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.share .btn:hover {
+  background: #eaeaea;
+  border-color: #888;
+}
+
+.share .btn:active {
+  background: #ddd;
+}
+
+.share .btn i {
+  margin-right: 4px;
+}
+
+/* 图例 */
+.legend {
+  position: absolute;
+  bottom: 0.75em;
+  left: 1em;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  z-index: 10;
+}
+
+.legend-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #333;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  color: #666;
+}
+
+.legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  margin-right: 8px;
+  border: 1px solid #ddd;
+}
+
+.legend-color.red {
+  background: #e84c3d;
+}
+
+.legend-color.orange {
+  background: #d58337;
+}
+
+.legend-color.yellow {
+  background: #f3c218;
+}
+
+.legend-color.green {
+  background: #30cc70;
+}
+
+.legend-color.blue {
+  background: #3598db;
+}
+
+.legend-color.white {
+  background: #ffffff;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+  .nav-group {
+    font-size: 12px;
+    top: 0.5em;
+    left: 0.5em;
+  }
+
+  .nav-group .link {
+    padding: 6px 12px;
+  }
+
+  .share {
+    bottom: 0.5em;
+    right: 0.5em;
+  }
+
+  .share .btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    margin: 0 2px;
+  }
+
+  .legend {
+    bottom: 0.5em;
+    left: 0.5em;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+  }
+
+  .form {
+    max-width: 160px;
+    min-width: 140px;
+  }
+
+  .form .label {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .legend {
+    display: none;
+  }
+
+  .share .btn span {
+    display: none;
+  }
+}
