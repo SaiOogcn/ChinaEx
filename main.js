@@ -393,6 +393,7 @@
             .province.red { fill: #e84c3d; }
             #label text, .labels text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
             text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
+            .labels text.vertical { writing-mode: vertical-rl; -webkit-writing-mode: vertical-rl; }
         `;
         svgClone.insertBefore(styleElement, svgClone.firstChild);
         
