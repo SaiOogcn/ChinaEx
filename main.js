@@ -454,12 +454,12 @@
             // 绘制图例（使用你的注释）
             var legendY = canvas.height - 28;
             var legendColors = [
-                { color: "#e84c3d", name: "常驻(曾居住)" },
-                { color: "#d58337", name: "宿泊(曾过夜)" },
-                { color: "#f3c218", name: "访问(曾游玩)" },
-                { color: "#30cc70", name: "歇脚(曾换乘)" },
-                { color: "#3598db", name: "行径(曾路过)" },
-                { color: "#ffffff", name: "未履" }
+                { color: "#e84c3d", name: "常驻(曾居住) +5" },
+                { color: "#d58337", name: "宿泊(曾过夜) +4" },
+                { color: "#f3c218", name: "访问(曾游玩) +3" },
+                { color: "#30cc70", name: "歇脚(曾换乘) +2" },
+                { color: "#3598db", name: "行径(曾路过) +1" },
+                { color: "#ffffff", name: "未履(从未涉足)" }
             ];
             
             ctx.font = "13px 'Noto Sans SC', sans-serif";
