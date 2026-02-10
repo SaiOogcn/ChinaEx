@@ -434,12 +434,13 @@
             ctx.font = "bold 34px 'Noto Sans SC', sans-serif";
             ctx.textAlign = "center";
             
-            var authorEl = document.getElementById("author");
-            var authorName = authorEl ? authorEl.textContent : "";
+            // 从 URL 参数获取名字
+            var params = new URLSearchParams(window.location.search);
+            var authorName = params.get("t") || "";
             var level = calculate();
-            var title = authorName && authorName !== "点击设置名字" 
-                ? authorName + " 的历省等级 "+level 
-                : "历省等级 "+level;
+            var title = authorName 
+                ? authorName + " 的历省等级：" + level 
+                : "历省等级：" + level;
             
             ctx.fillText(title, canvas.width / 2, 60);
             
