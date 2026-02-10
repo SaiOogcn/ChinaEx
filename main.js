@@ -1,5 +1,5 @@
 /**
- * ChinaEx - 历省等级
+ * ChinaEx - 制省等级
  * 记录你走过的中国每一个省份
  */
 (function() {
@@ -309,7 +309,7 @@
         }
         
         // 更新页面标题
-        document.title = "历省等级 - Level " + totalLevel;
+        document.title = "制省等级 - Level " + totalLevel;
         
         return totalLevel;
     }
@@ -439,8 +439,8 @@
             var authorName = params.get("t") || "";
             var level = calculate();
             var title = authorName 
-                ? authorName + " 的历省等级：" + level 
-                : "历省等级：" + level;
+                ? authorName + " 的制省等级：" + level 
+                : "制省等级：" + level;
             
             ctx.fillText(title, canvas.width / 2, 60);
             
