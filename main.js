@@ -1,728 +1,517 @@
 /**
- * ChinaEx 制省等级 - JavaScript 逻辑
- * 使用 flood fill 掩膜进行点击检测和颜色填充
+ * ChinaEx - 历省等级
+ * 记录你走过的中国每一个省份
  */
-
 (function() {
     'use strict';
 
-    // 颜色配置
-    const colors = {
-        'red': '#e84c3d',
-        'orange': '#d58337', 
-        'yellow': '#f3c218',
-        'green': '#30cc70',
-        'blue': '#3598db',
-        'white': '#ffffff'
-    };
-
-    // 地区数据 - 所有省份
-    const areas = {
-        '新疆': { level: 0, name: '新疆' },
-        '西藏': { level: 0, name: '西藏' },
-        '青海': { level: 0, name: '青海' },
-        '甘肃': { level: 0, name: '甘肃' },
-        '内蒙古': { level: 0, name: '内蒙古' },
-        '黑龙江': { level: 0, name: '黑龙江' },
-        '吉林': { level: 0, name: '吉林' },
-        '辽宁': { level: 0, name: '辽宁' },
-        '宁夏': { level: 0, name: '宁夏' },
-        '陕西': { level: 0, name: '陕西' },
-        '山西': { level: 0, name: '山西' },
-        '河北': { level: 0, name: '河北' },
-        '山东': { level: 0, name: '山东' },
-        '河南': { level: 0, name: '河南' },
-        '江苏': { level: 0, name: '江苏' },
-        '安徽': { level: 0, name: '安徽' },
-        '湖北': { level: 0, name: '湖北' },
-        '四川': { level: 0, name: '四川' },
-        '重庆': { level: 0, name: '重庆' },
-        '湖南': { level: 0, name: '湖南' },
-        '江西': { level: 0, name: '江西' },
-        '浙江': { level: 0, name: '浙江' },
-        '福建': { level: 0, name: '福建' },
-        '贵州': { level: 0, name: '贵州' },
-        '云南': { level: 0, name: '云南' },
-        '广西': { level: 0, name: '广西' },
-        '广东': { level: 0, name: '广东' },
-        '台湾': { level: 0, name: '台湾' },
-        '海南': { level: 0, name: '海南' },
-        '香港': { level: 0, name: '香港' },
-        '澳门': { level: 0, name: '澳门' },
-        '北京': { level: 0, name: '北京' },
-        '天津': { level: 0, name: '天津' },
-        '上海': { level: 0, name: '上海' }
-    };
-
-    // 掩膜与填充
-    const viewBox = { minX: -11.1, minY: -3.1, width: 47.2, height: 39.2 };
-    let maskCanvas, maskCtx, colorCanvas, colorCtx, maskData, maskStrokeWidth = 3;
+    // 存储键名
+    var STORAGE_KEY = "chinaex-levels";
     
-    // 省份中心点和边界框 (SVG 坐标)
-    // bounds: [minX, minY, maxX, maxY]
-    const provinceData = {
-        '新疆': { center: [-4.5, 9.9], bounds: [-14.0, 2.0, 5.0, 17.7] },
-        '西藏': { center: [-1.3, 20.6], bounds: [-9.9, 15.5, 7.3, 25.7] },
-        '青海': { center: [4.9, 16.6], bounds: [-0.8, 12.6, 10.6, 20.6] },
-        '甘肃': { center: [8.4, 14.2], bounds: [1.6, 8.8, 15.3, 19.6] },
-        '内蒙古': { center: [17.7, 6.0], bounds: [5.7, -2.4, 29.7, 14.5] },
-        '黑龙江': { center: [31.4, 2.7], bounds: [25.6, -2.6, 37.2, 8.1] },
-        '吉林': { center: [30.0, 7.9], bounds: [26.0, 5.1, 34.0, 10.8] },
-        '辽宁': { center: [26.6, 10.6], bounds: [23.7, 8.0, 29.4, 13.1] },
-        '宁夏': { center: [13.0, 14.6], bounds: [11.6, 12.4, 14.4, 16.8] },
-        '陕西': { center: [15.0, 16.3], bounds: [12.6, 12.2, 17.4, 20.5] },
-        '山西': { center: [18.3, 14.2], bounds: [16.5, 11.0, 20.1, 17.5] },
-        '河北': { center: [21.9, 12.4], bounds: [19.2, 9.0, 24.5, 15.9] },
-        '北京': { center: [21.7, 11.5], bounds: [20.8, 10.6, 22.6, 12.3] },
-        '天津': { center: [22.5, 12.4], bounds: [21.9, 11.5, 23.0, 13.3] },
-        '山东': { center: [23.6, 15.6], bounds: [20.3, 13.5, 26.9, 17.7] },
-        '河南': { center: [19.2, 18.2], bounds: [16.6, 15.6, 21.8, 20.9] },
-        '江苏': { center: [23.9, 19.2], bounds: [21.6, 16.9, 26.3, 21.5] },
-        '安徽': { center: [22.4, 20.2], bounds: [20.4, 17.4, 24.3, 23.0] },
-        '上海': { center: [25.9, 21.0], bounds: [25.3, 20.3, 26.4, 21.6] },
-        '浙江': { center: [25.0, 23.2], bounds: [23.0, 21.1, 27.0, 25.4] },
-        '福建': { center: [23.1, 26.6], bounds: [21.2, 24.1, 25.0, 29.2] },
-        '江西': { center: [21.3, 25.2], bounds: [19.3, 22.2, 23.4, 28.2] },
-        '湖北': { center: [18.2, 21.1], bounds: [15.0, 18.9, 21.4, 23.4] },
-        '湖南': { center: [17.6, 25.1], bounds: [15.3, 22.2, 19.9, 28.0] },
-        '广东': { center: [19.2, 29.9], bounds: [16.0, 27.1, 22.3, 32.7] },
-        '广西': { center: [14.9, 29.0], bounds: [11.7, 26.2, 18.0, 31.8] },
-        '海南': { center: [16.2, 33.8], bounds: [15.2, 32.8, 17.2, 34.9] },
-        '四川': { center: [10.5, 22.1], bounds: [5.8, 17.8, 15.1, 26.5] },
-        '重庆': { center: [14.5, 22.1], bounds: [12.4, 20.0, 16.5, 24.3] },
-        '贵州': { center: [13.5, 25.6], bounds: [11.0, 23.2, 16.0, 28.0] },
-        '云南': { center: [9.6, 27.4], bounds: [6.0, 23.2, 13.2, 31.7] },
-        '台湾': { center: [26.3, 28.8], bounds: [24.2, 26.6, 28.4, 30.9] },
-        '香港': { center: [19.8, 30.4], bounds: [19.5, 30.2, 20.0, 30.6] },
-        '澳门': { center: [19.3, 30.6], bounds: [19.3, 30.6, 19.3, 30.7] },
+    // 等级颜色列表（从低到高）
+    var LEVEL_COLORS = ["white", "blue", "green", "yellow", "orange", "red"];
+    
+    // 颜色对应分数
+    var COLOR_SCORE = {
+        white: 0,
+        blue: 1,
+        green: 2,
+        yellow: 3,
+        orange: 4,
+        red: 5
     };
     
-    // 从 provinceData 生成 seeds（用于 flood fill）
-    const seeds = {};
-    for (const name in provinceData) {
-        seeds[name] = provinceData[name].center;
-    }
-
-    // 网站标题
-    const siteTitle = document.title;
-    let currentTarget = null;
+    // 颜色对应的中文描述
+    var COLOR_DESC = {
+        white: "未踏",
+        blue: "经过",
+        green: "到达",
+        yellow: "访问",
+        orange: "住宿",
+        red: "居住"
+    };
+    
+    // 当前选中的省份
+    var currentProvince = null;
+    
+    // 省份等级数据
+    var provinceLevels = {};
+    
+    // DOM 元素引用
+    var form, formTitle, svg;
 
     /**
-     * 初始化
+     * 初始化应用
      */
     function init() {
-        console.log('[DEBUG] init 开始');
+        form = document.querySelector(".form");
+        formTitle = form.querySelector(".title .name");
+        svg = document.getElementById("svg");
         
-        // 准备画布
-        setupCanvas();
-
-        // 从URL hash恢复状态
-        loadStateFromHash();
-        
-        // 从URL参数获取作者名
+        loadLevels();
         loadAuthorFromQuery();
-        
-        // 绑定事件
         bindEvents();
-        
-        // 计算等级并渲染颜色
+        renderAllLevels();
         calculate();
-        renderColors();
     }
 
     /**
-     * 画布初始化与掩膜构建
+     * 从 URL hash 或 localStorage 加载等级数据
      */
-    function setupCanvas() {
-        colorCanvas = document.getElementById('colorCanvas');
-        maskCanvas = document.getElementById('maskCanvas');
-        colorCtx = colorCanvas.getContext('2d');
-        maskCtx = maskCanvas.getContext('2d');
-
-        // 依据父容器大小设置，保持与 SVG 相同的宽高比
-        const wrapper = document.querySelector('.map-wrapper');
-        const wrapperWidth = wrapper.clientWidth;
-        const wrapperHeight = wrapper.clientHeight;
-        
-        // SVG 的原始宽高比
-        const svgAspectRatio = viewBox.width / viewBox.height; // 47.2 / 39.2
-        const wrapperAspectRatio = wrapperWidth / wrapperHeight;
-        
-        let width, height;
-        if (wrapperAspectRatio > svgAspectRatio) {
-            // 容器更宽，以高度为准
-            height = wrapperHeight;
-            width = height * svgAspectRatio;
-        } else {
-            // 容器更高，以宽度为准
-            width = wrapperWidth;
-            height = width / svgAspectRatio;
-        }
-        
-        colorCanvas.width = width;
-        colorCanvas.height = height;
-        maskCanvas.width = width;
-        maskCanvas.height = height;
-        
-        // Canvas 居中并设置显示尺寸
-        colorCanvas.style.position = 'absolute';
-        colorCanvas.style.left = ((wrapperWidth - width) / 2) + 'px';
-        colorCanvas.style.top = ((wrapperHeight - height) / 2) + 'px';
-        colorCanvas.style.width = width + 'px';
-        colorCanvas.style.height = height + 'px';
-
-        // 绘制边界到掩膜
-        maskCtx.clearRect(0, 0, width, height);
-        maskCtx.strokeStyle = '#000';
-        // 线宽随分辨率放大，尽量封闭缝隙，防止一个种子淹没全图
-        const lineWidth = Math.max(width, height) * 0.012;
-        maskStrokeWidth = lineWidth;
-        maskCtx.lineWidth = lineWidth;
-        maskCtx.lineJoin = 'round';
-        maskCtx.lineCap = 'round';
-        
-        const pathD = document.getElementById('main-path').getAttribute('d');
-        const p = new Path2D(pathD);
-        
-        // 将 viewBox 坐标映射到 canvas
-        maskCtx.save();
-        const scaleX = width / viewBox.width;
-        const scaleY = height / viewBox.height;
-        maskCtx.scale(scaleX, scaleY);
-        maskCtx.translate(-viewBox.minX, -viewBox.minY);
-        // 画两遍，进一步加粗闭合
-        maskCtx.stroke(p);
-        maskCtx.stroke(p);
-        maskCtx.restore();
-
-        // 区域填充标签
-        buildMaskLabels();
-    }
-
-    /**
-     * 为每个省通过 flood fill 打标签
-     */
-    function buildMaskLabels() {
-        const width = maskCanvas.width;
-        const height = maskCanvas.height;
-        const img = maskCtx.getImageData(0, 0, width, height);
-        const data = img.data;
-
-        // 辅助函数：像素索引
-        const idx = (x, y) => (y * width + x) * 4;
-
-        // 获取颜色，使用唯一R值编码
-        let currentId = 1;
-        const areaIdMap = {};
-        const searchRadius = Math.max(4, Math.ceil(maskStrokeWidth * 2));
-        
-        for (const key in seeds) {
-            const [sx, sy] = worldToCanvas(seeds[key][0], seeds[key][1], width, height);
-            const seedX = Math.round(sx);
-            const seedY = Math.round(sy);
-            let placed = false;
-            
-            // 尝试在种子点附近找到一个空白像素
-            for (let r = 0; r <= searchRadius && !placed; r++) {
-                for (let dx = -r; dx <= r && !placed; dx++) {
-                    const dyList = [r, -r];
-                    for (const dy of dyList) {
-                        const px = seedX + dx;
-                        const py = seedY + dy;
-                        if (px < 0 || py < 0 || px >= width || py >= height) continue;
-                        const targetIndex = idx(px, py);
-                        if (data[targetIndex] !== 0) continue;
-                        floodFill(data, width, height, px, py, [0, 0, 0, 0], [currentId, 0, 0, 255]);
-                        areaIdMap[currentId] = key;
-                        currentId++;
-                        placed = true;
-                        break;
-                    }
-                }
-                for (let dy = -r; dy <= r && !placed; dy++) {
-                    const dxList = [r, -r];
-                    for (const dx of dxList) {
-                        const px = seedX + dx;
-                        const py = seedY + dy;
-                        if (px < 0 || py < 0 || px >= width || py >= height) continue;
-                        const targetIndex = idx(px, py);
-                        if (data[targetIndex] !== 0) continue;
-                        floodFill(data, width, height, px, py, [0, 0, 0, 0], [currentId, 0, 0, 255]);
-                        areaIdMap[currentId] = key;
-                        currentId++;
-                        placed = true;
-                        break;
-                    }
-                }
-            }
-            if (!placed) {
-                console.warn('seed failed for', key);
-            }
-        }
-        maskCtx.putImageData(img, 0, 0);
-        maskData = { img, areaIdMap };
-    }
-
-    /**
-     * 简易 flood fill
-     */
-    function floodFill(data, width, height, x, y, target, replace) {
-        const idx = (x, y) => (y * width + x) * 4;
-        const match = (i) => data[i] === target[0] && data[i + 1] === target[1] && data[i + 2] === target[2] && data[i + 3] === target[3];
-        const set = (i) => {
-            data[i] = replace[0];
-            data[i + 1] = replace[1];
-            data[i + 2] = replace[2];
-            data[i + 3] = replace[3];
-        };
-        const stack = [[x, y]];
-        while (stack.length) {
-            const [cx, cy] = stack.pop();
-            if (cx < 0 || cy < 0 || cx >= width || cy >= height) continue;
-            const i = idx(cx, cy);
-            if (!match(i)) continue;
-            set(i);
-            stack.push([cx + 1, cy]);
-            stack.push([cx - 1, cy]);
-            stack.push([cx, cy + 1]);
-            stack.push([cx, cy - 1]);
-        }
-    }
-
-    /**
-     * 世界坐标 -> 画布像素
-     */
-    function worldToCanvas(x, y, width, height) {
-        const sx = (x - viewBox.minX) / viewBox.width * width;
-        const sy = (y - viewBox.minY) / viewBox.height * height;
-        return [sx, sy];
-    }
-
-    /**
-     * 根据 mask 重绘颜色层
-     */
-    function renderColors() {
-        if (!maskData) return;
-        const width = colorCanvas.width;
-        const height = colorCanvas.height;
-        const out = colorCtx.createImageData(width, height);
-        const src = maskData.img.data;
-        const dst = out.data;
-        const idToArea = maskData.areaIdMap;
-
-        for (let i = 0; i < src.length; i += 4) {
-            const id = src[i];
-            if (!id) continue;
-            const name = idToArea[id];
-            const level = areas[name]?.level ?? 0;
-            const color = colors[getColor(level)];
-            const r = parseInt(color.slice(1, 3), 16);
-            const g = parseInt(color.slice(3, 5), 16);
-            const b = parseInt(color.slice(5, 7), 16);
-            dst[i] = r;
-            dst[i + 1] = g;
-            dst[i + 2] = b;
-            dst[i + 3] = 200; // 半透明
-        }
-        colorCtx.putImageData(out, 0, 0);
-    }
-
-    /**
-     * 从URL hash加载状态
-     */
-    function loadStateFromHash() {
-        if (window.location.hash) {
-            const hash = window.location.hash.substring(1);
-            let i = 0;
-            for (const id in areas) {
+    function loadLevels() {
+        // 优先从 URL hash 加载
+        if (window.location.hash && window.location.hash.length > 1) {
+            var hash = window.location.hash.substring(1);
+            var provinces = document.querySelectorAll(".province");
+            var i = 0;
+            provinces.forEach(function(p) {
                 if (hash[i] !== undefined) {
-                    areas[id].level = parseInt(hash[i]) || 0;
+                    var level = parseInt(hash[i]) || 0;
+                    provinceLevels[p.id] = levelToColor(level);
                 }
                 i++;
+            });
+            return;
+        }
+        
+        // 从 localStorage 加载
+        try {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                provinceLevels = JSON.parse(saved);
             }
+        } catch (e) {
+            provinceLevels = {};
         }
     }
 
     /**
-     * 从URL参数加载作者名
+     * 保存等级数据到 localStorage 和 URL hash
      */
-    function loadAuthorFromQuery() {
-        const params = parseQuery();
-        if (params.t) {
-            const authorElem = document.getElementById('author');
-            if (authorElem) {
-                authorElem.textContent = params.t;
-            }
+    function saveLevels() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(provinceLevels));
+        } catch (e) {
+            console.warn("无法保存到 localStorage");
         }
+        updateHash();
     }
 
     /**
-     * 绑定事件
+     * 更新 URL hash
+     */
+    function updateHash() {
+        var provinces = document.querySelectorAll(".province");
+        var hash = "";
+        provinces.forEach(function(p) {
+            var color = provinceLevels[p.id] || "white";
+            hash += COLOR_SCORE[color] || 0;
+        });
+        history.replaceState(null, "", "#" + hash);
+    }
+
+    /**
+     * 将等级数字转换为颜色名称
+     */
+    function levelToColor(level) {
+        var idx = Math.min(Math.max(0, level), 5);
+        return LEVEL_COLORS[idx];
+    }
+
+    /**
+     * 渲染所有省份的等级颜色
+     */
+    function renderAllLevels() {
+        var provinces = document.querySelectorAll(".province");
+        provinces.forEach(function(province) {
+            var color = provinceLevels[province.id] || "white";
+            LEVEL_COLORS.forEach(function(c) {
+                province.classList.remove(c);
+            });
+            province.classList.add(color);
+        });
+    }
+
+    /**
+     * 设置省份等级
+     */
+    function setProvinceLevel(provinceName, color) {
+        provinceLevels[provinceName] = color;
+        saveLevels();
+        
+        var province = document.getElementById(provinceName);
+        if (province) {
+            LEVEL_COLORS.forEach(function(c) {
+                province.classList.remove(c);
+            });
+            province.classList.add(color);
+        }
+        calculate();
+    }
+
+    /**
+     * 绑定事件监听器
      */
     function bindEvents() {
-        // 点击地区 - 通过透明点击层
-        const clickLayer = document.getElementById('clickLayer');
-        
-        if (!clickLayer) {
-            console.error('clickLayer 元素不存在');
-            return;
-        }
-        
-        clickLayer.addEventListener('click', function(e) {
-            // 将点击坐标转换为 SVG 世界坐标，然后找最近的省
-            const svgCoord = screenToWorld(e.clientX, e.clientY);
-            const areaName = findNearestProvince(svgCoord.x, svgCoord.y);
-            
-            if (areaName) {
-                currentTarget = { id: areaName };
-                showForm({ id: areaName, clientX: e.clientX, clientY: e.clientY });
-            }
-        });
-
-        document.addEventListener('click', function(e) {
-            const target = e.target;
-            
-            // 点击等级标签
-            if (target.classList.contains('level')) {
-                const value = parseInt(target.dataset.value) || 0;
-                if (currentTarget) {
-                    setLevel(currentTarget, value);
-                    calculate();
-                }
-                closeForm();
-                return;
-            }
-            
-            // 点击关闭按钮
-            if (target.id === 'close' || target.closest('#close')) {
-                closeForm();
-                return;
-            }
-            
-            // 点击保存图片按钮
-            if (target.id === 'saveAsImage' || target.closest('#saveAsImage')) {
-                saveAsImage();
-                return;
-            }
-            
-            // 点击设置名字按钮
-            if (target.id === 'setName' || target.closest('#setName')) {
-                setAuthor();
-                return;
-            }
-            
-            // 点击作者名
-            if (target.id === 'author') {
-                setAuthor();
-                return;
-            }
-            
-            // 点击其他地方关闭表单（但排除 clickLayer，因为它会打开新表单）
-            if (!target.closest('#form') && target.id !== 'clickLayer') {
-                closeForm();
-            }
-        });
-    }
-
-    /**
-     * 屏幕坐标转 SVG 世界坐标
-     */
-    function screenToWorld(clientX, clientY) {
-        const svg = document.getElementById('svg');
-        const rect = svg.getBoundingClientRect();
-        // 相对于 SVG 元素的位置（0-1）
-        const relX = (clientX - rect.left) / rect.width;
-        const relY = (clientY - rect.top) / rect.height;
-        // 转换为 viewBox 坐标
-        const x = viewBox.minX + relX * viewBox.width;
-        const y = viewBox.minY + relY * viewBox.height;
-        return { x, y };
-    }
-
-    /**
-     * 根据世界坐标找最近的省份
-     * 优先级：1. 小省份精确匹配（面积小的优先）2. 边界框匹配 3. 最近中心点
-     */
-    function findNearestProvince(x, y) {
-        // 小省份列表（需要精确匹配，优先级最高）
-        const smallProvinces = ['北京', '天津', '上海', '香港', '澳门', '宁夏'];
-        
-        // 首先检查小省份（边界框必须完全匹配）
-        for (const name of smallProvinces) {
-            const data = provinceData[name];
-            if (!data) continue;
-            const [minX, minY, maxX, maxY] = data.bounds;
-            if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                return name;
-            }
-        }
-        
-        // 收集所有边界框包含该点的省份
-        const candidates = [];
-        for (const name in provinceData) {
-            if (smallProvinces.includes(name)) continue; // 已检查过
-            const data = provinceData[name];
-            const [minX, minY, maxX, maxY] = data.bounds;
-            if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                const [cx, cy] = data.center;
-                const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-                // 计算边界框面积，面积越小优先级越高
-                const area = (maxX - minX) * (maxY - minY);
-                candidates.push({ name, dist, area });
-            }
-        }
-        
-        if (candidates.length > 0) {
-            // 按面积排序（小的优先），面积相同则按距离
-            candidates.sort((a, b) => {
-                // 面积差距大于50%时按面积排序
-                if (Math.abs(a.area - b.area) / Math.max(a.area, b.area) > 0.5) {
-                    return a.area - b.area;
-                }
-                // 否则按距离排序
-                return a.dist - b.dist;
+        // 省份点击事件
+        document.querySelectorAll(".province").forEach(function(province) {
+            province.addEventListener("click", function(e) {
+                e.stopPropagation();
+                showForm(this.id, e.clientX, e.clientY);
             });
-            return candidates[0].name;
-        }
-        
-        // 没有匹配的边界框，用最近中心点（兜底）
-        let minDist = Infinity;
-        let nearest = null;
-        for (const name in provinceData) {
-            const [cx, cy] = provinceData[name].center;
-            const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = name;
-            }
-        }
-        
-        // 如果距离太远，说明点击在地图外
-        if (minDist > 10) return null;
-        return nearest;
-    }
-
-    /**
-     * 将鼠标位置转换为画布像素
-     */
-    function getRelativePosition(e) {
-        const rect = colorCanvas.getBoundingClientRect();
-        const x = Math.round((e.clientX - rect.left) * (colorCanvas.width / rect.width));
-        const y = Math.round((e.clientY - rect.top) * (colorCanvas.height / rect.height));
-        return { x, y };
-    }
-
-    /**
-     * 读取掩膜像素确定省份
-     */
-    function pickArea(x, y) {
-        if (!maskData) return null;
-        const { img, areaIdMap } = maskData;
-        const idx = (y * img.width + x) * 4;
-        if (idx < 0 || idx >= img.data.length) return null;
-        const id = img.data[idx];
-        return areaIdMap[id] || null;
-    }
-
-    /**
-     * 显示等级选择表单
-     */
-    function showForm(elem) {
-        const form = document.getElementById('form');
-        
-        if (!form) {
-            console.error('form 元素不存在');
-            return;
-        }
-        
-        // 设置标题
-        const titleLang = form.querySelector('.title .lang');
-        titleLang.textContent = areas[elem.id].name || elem.id;
-        
-        // 设置搜索链接
-        const searchLink = form.querySelector('.title .search');
-        const searchQuery = '中国 ' + (areas[elem.id].name || elem.id) + ' 旅游景点';
-        searchLink.href = 'https://www.baidu.com/s?wd=' + encodeURIComponent(searchQuery);
-        
-        // 使用传入的点击坐标来定位表单
-        let left = elem.clientX || window.innerWidth / 2;
-        let top = elem.clientY || window.innerHeight / 2;
-        
-        // 确保表单不超出屏幕
-        const formWidth = 180;
-        const formHeight = 250;
-        
-        if (left + formWidth > window.innerWidth) {
-            left = window.innerWidth - formWidth - 10;
-        }
-        if (top + formHeight > window.innerHeight) {
-            top = window.innerHeight - formHeight - 10;
-        }
-        if (left < 10) left = 10;
-        if (top < 10) top = 10;
-        
-        form.style.left = left + 'px';
-        form.style.top = top + 'px';
-        
-        // 标记当前选中的等级
-        form.querySelectorAll('.level').forEach(label => {
-            label.classList.remove('selected');
         });
         
-        const currentLevel = areas[elem.id].level || 0;
-        const currentColor = getColor(currentLevel);
-        const selectedLabel = form.querySelector('.level.' + currentColor);
-        if (selectedLabel) {
-            selectedLabel.classList.add('selected');
+        // 省份标签点击事件（可选）
+        document.querySelectorAll("#label text").forEach(function(label) {
+            label.addEventListener("click", function(e) {
+                e.stopPropagation();
+                var place = this.getAttribute("data-place");
+                if (place) {
+                    showForm(place, e.clientX, e.clientY);
+                }
+            });
+        });
+        
+        // 等级选择事件
+        form.querySelectorAll(".level").forEach(function(label) {
+            label.addEventListener("click", function(e) {
+                e.stopPropagation();
+                var color = this.dataset.level;
+                if (currentProvince && color) {
+                    setProvinceLevel(currentProvince, color);
+                    updateFormSelection(color);
+                }
+            });
+        });
+        
+        // 关闭按钮事件
+        var closeBtn = form.querySelector(".close-btn");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                closeForm();
+            });
         }
         
-        form.classList.add('show');
+        // 点击其他区域关闭表单
+        document.addEventListener("click", function(e) {
+            if (!form.contains(e.target) && !e.target.classList.contains("province")) {
+                closeForm();
+            }
+        });
+        
+        // 重置按钮
+        var resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+            resetBtn.addEventListener("click", resetAll);
+        }
+        
+        // 保存图片按钮
+        var shareBtn = document.getElementById("btn-share");
+        if (shareBtn) {
+            shareBtn.addEventListener("click", saveAsImage);
+        }
+        
+        // 设置名字按钮
+        var nameBtn = document.getElementById("btn-name");
+        if (nameBtn) {
+            nameBtn.addEventListener("click", setAuthor);
+        }
+        
+        // 作者区域点击
+        var author = document.getElementById("author");
+        if (author) {
+            author.addEventListener("click", setAuthor);
+        }
+        
+        // 键盘事件
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                closeForm();
+            }
+        });
     }
 
     /**
-     * 关闭表单
+     * 显示选择表单
+     */
+    function showForm(provinceName, x, y) {
+        currentProvince = provinceName;
+        formTitle.textContent = provinceName;
+        
+        // 更新搜索链接
+        var searchLink = form.querySelector(".title .search");
+        if (searchLink) {
+            searchLink.href = "https://www.baidu.com/s?wd=" + encodeURIComponent(provinceName + " 旅游景点");
+        }
+        
+        // 更新选中状态
+        var currentColor = provinceLevels[provinceName] || "white";
+        updateFormSelection(currentColor);
+        
+        // 计算位置
+        var left = x + 15;
+        var top = y + 15;
+        
+        // 边界检测
+        if (left + 220 > window.innerWidth) {
+            left = x - 235;
+        }
+        if (top + 320 > window.innerHeight) {
+            top = y - 320;
+        }
+        left = Math.max(10, left);
+        top = Math.max(10, top);
+        
+        form.style.left = left + "px";
+        form.style.top = top + "px";
+        form.classList.add("show");
+    }
+
+    /**
+     * 更新表单中的选中状态
+     */
+    function updateFormSelection(color) {
+        form.querySelectorAll(".level").forEach(function(label) {
+            label.classList.remove("selected");
+            if (label.dataset.level === color) {
+                label.classList.add("selected");
+            }
+        });
+    }
+
+    /**
+     * 关闭选择表单
      */
     function closeForm() {
-        const form = document.getElementById('form');
-        form.classList.remove('show');
-        form.querySelectorAll('.level').forEach(label => {
-            label.classList.remove('selected');
-        });
+        form.classList.remove("show");
+        currentProvince = null;
     }
 
     /**
-     * 设置区域等级
-     */
-    function setLevel(elem, level) {
-        if (!elem || !areas[elem.id]) return;
-
-        areas[elem.id].level = level;
-        renderColors();
-    }
-
-    /**
-     * 根据等级获取颜色名称
-     */
-    function getColor(level) {
-        switch (parseInt(level)) {
-            case 5: return 'red';
-            case 4: return 'orange';
-            case 3: return 'yellow';
-            case 2: return 'green';
-            case 1: return 'blue';
-            default: return 'white';
-        }
-    }
-
-    /**
-     * 计算总等级
+     * 计算总等级分数
      */
     function calculate() {
-        let totalLevel = 0;
-        let hash = '';
+        var totalLevel = 0;
+        var visitedCount = 0;
         
-        for (const id in areas) {
-            totalLevel += parseInt(areas[id].level) || 0;
-            hash += areas[id].level || 0;
+        for (var key in provinceLevels) {
+            var score = COLOR_SCORE[provinceLevels[key]] || 0;
+            totalLevel += score;
+            if (score > 0) {
+                visitedCount++;
+            }
         }
         
-        // 更新显示
-        const levelText = document.getElementById('level-text');
-        if (levelText) {
-            levelText.textContent = totalLevel;
+        var levelEl = document.getElementById("level");
+        if (levelEl) {
+            levelEl.textContent = totalLevel;
         }
         
-        const svgLevel = document.getElementById('level');
-        if (svgLevel) {
-            svgLevel.textContent = 'Level: ' + totalLevel;
-        }
-        
-        // 更新URL hash
-        const title = totalLevel ? siteTitle + ' - Level ' + totalLevel : siteTitle;
-        history.replaceState(undefined, title, '#' + hash);
-
-        renderColors();
+        // 更新页面标题
+        document.title = "历省等级 - Level " + totalLevel;
         
         return totalLevel;
     }
 
     /**
-     * 保存为图片
+     * 重置所有省份等级
      */
-    function saveAsImage() {
-        const svg = document.getElementById('svg');
+    function resetAll() {
+        if (confirm("确定要重置所有省份的等级吗？此操作不可撤销。")) {
+            provinceLevels = {};
+            saveLevels();
+            renderAllLevels();
+            calculate();
+            closeForm();
+        }
+    }
 
-        // 统一尺寸
-        const width = colorCanvas.width;
-        const height = colorCanvas.height;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = width;
-        canvas.height = height;
-
-        // 先绘制背景
-        ctx.fillStyle = '#9dc3fb';
-        ctx.fillRect(0, 0, width, height);
-
-        // 绘制彩色层
-        ctx.drawImage(colorCanvas, 0, 0, width, height);
-
-        // 绘制边界 SVG
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-        const img = new Image();
-        img.onload = function() {
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const link = document.createElement('a');
-            link.download = 'ChinaEx_Level_' + calculate() + '.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
+    /**
+     * 从 URL 参数加载作者名
+     */
+    function loadAuthorFromQuery() {
+        var params = new URLSearchParams(window.location.search);
+        var name = params.get("t");
+        if (name) {
+            var authorEl = document.getElementById("author");
+            if (authorEl) {
+                authorEl.textContent = name;
+            }
+        }
     }
 
     /**
      * 设置作者名
      */
     function setAuthor() {
-        const params = parseQuery();
-        const currentName = params.t || '';
-        const newName = prompt('请输入您想要显示的名字：', currentName);
+        var params = new URLSearchParams(window.location.search);
+        var currentName = params.get("t") || "";
+        var newName = prompt("请输入您想要显示的名字：", currentName);
         
         if (newName !== null) {
-            if (newName) {
-                window.location.search = 't=' + encodeURIComponent(newName);
+            if (newName.trim()) {
+                params.set("t", newName.trim());
             } else {
-                window.location.search = '';
+                params.delete("t");
+            }
+            
+            var newUrl = window.location.pathname;
+            if (params.toString()) {
+                newUrl += "?" + params.toString();
+            }
+            if (window.location.hash) {
+                newUrl += window.location.hash;
+            }
+            window.history.replaceState(null, "", newUrl);
+            
+            var authorEl = document.getElementById("author");
+            if (authorEl) {
+                authorEl.textContent = newName.trim() || "点击设置名字";
             }
         }
     }
 
     /**
-     * 解析URL查询参数
+     * 保存为图片
      */
-    function parseQuery() {
-        const params = {};
-        const search = window.location.search.substring(1).split('&');
+    function saveAsImage() {
+        var svgElement = document.getElementById("svg");
         
-        search.forEach(function(val) {
-            const query = val.split('=');
-            if (query.length === 2) {
-                params[query[0]] = decodeURIComponent(query[1]);
-            }
-        });
+        // 克隆 SVG
+        var svgClone = svgElement.cloneNode(true);
         
-        return params;
+        // 内联样式到 SVG（解决导出时样式丢失问题）
+        var styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+        styleElement.textContent = `
+            .province { stroke: #666; stroke-width: 0.15; }
+            .province.white { fill: #ffffff; }
+            .province.blue { fill: #3598db; }
+            .province.green { fill: #30cc70; }
+            .province.yellow { fill: #f3c218; }
+            .province.orange { fill: #d58337; }
+            .province.red { fill: #e84c3d; }
+            #label text, .labels text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
+            text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
+        `;
+        svgClone.insertBefore(styleElement, svgClone.firstChild);
+        
+        // 设置 SVG 尺寸属性（确保正确渲染）
+        svgClone.setAttribute("width", "800");
+        svgClone.setAttribute("height", "700");
+        
+        // 获取 SVG 数据
+        var svgData = new XMLSerializer().serializeToString(svgClone);
+        var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(svgBlob);
+        
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+        var img = new Image();
+        
+        img.onload = function() {
+            // 设置画布尺寸（增加上下空间给标题和图例）
+            var headerHeight = 70;
+            var footerHeight = 50;
+            var mapWidth = 800;
+            var mapHeight = 700;
+            canvas.width = mapWidth;
+            canvas.height = headerHeight + mapHeight + footerHeight;
+            
+            // 绘制背景
+            ctx.fillStyle = "#9dc3fb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制地图（偏移到标题下方）
+            ctx.drawImage(img, 0, headerHeight, mapWidth, mapHeight);
+            
+            // 绘制顶部背景条（纯色，不透明）
+            ctx.fillStyle = "#9dc3fb";
+            ctx.fillRect(0, 0, canvas.width, headerHeight);
+            
+            // 绘制标题
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 28px 'Noto Sans SC', sans-serif";
+            ctx.textAlign = "center";
+            
+            var authorEl = document.getElementById("author");
+            var authorName = authorEl ? authorEl.textContent : "";
+            var level = calculate();
+            var title = authorName && authorName !== "点击设置名字" 
+                ? authorName + " 的历省等级" 
+                : "历省等级";
+            
+            ctx.fillText(title, canvas.width / 2, 30);
+            
+            // 绘制等级
+            ctx.font = "22px 'Noto Sans SC', sans-serif";
+            ctx.fillText("Level: " + level, canvas.width / 2, 58);
+            
+            // 绘制底部背景条（纯色，不透明）
+            ctx.fillStyle = "#9dc3fb";
+            ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
+            
+            // 绘制图例（使用你的注释）
+            var legendY = canvas.height - 28;
+            var legendColors = [
+                { color: "#e84c3d", name: "常驻(曾居住)" },
+                { color: "#d58337", name: "宿泊(曾过夜)" },
+                { color: "#f3c218", name: "访问(曾游玩)" },
+                { color: "#30cc70", name: "歇脚(曾换乘)" },
+                { color: "#3598db", name: "行径(曾路过)" },
+                { color: "#ffffff", name: "未履" }
+            ];
+            
+            ctx.font = "13px 'Noto Sans SC', sans-serif";
+            ctx.textAlign = "left";
+            
+            var legendX = 35;
+            var spacing = 125;
+            
+            legendColors.forEach(function(item, index) {
+                var x = legendX + index * spacing;
+                
+                // 绘制颜色圆点
+                ctx.beginPath();
+                ctx.arc(x, legendY, 8, 0, Math.PI * 2);
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                ctx.strokeStyle = "#666";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // 绘制文字
+                ctx.fillStyle = "#333";
+                ctx.fillText(item.name, x + 14, legendY + 4);
+            });
+            
+            // 绘制水印
+            ctx.fillStyle = "#666";
+            ctx.font = "11px sans-serif";
+            ctx.textAlign = "right";
+            ctx.fillText("ChinaEx · 历省等级", canvas.width - 10, canvas.height - 8);
+            
+            // 下载图片
+            var link = document.createElement("a");
+            link.download = "ChinaEx_Level_" + level + ".png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        };
+        
+        img.onerror = function() {
+            alert("生成图片失败，请稍后重试");
+            URL.revokeObjectURL(url);
+        };
+        
+        img.src = url;
     }
 
-    // 页面加载完成后初始化
-    window.onload = init;
-    window.onresize = () => {
-        setupCanvas();
-        renderColors();
-    };
-
+    // 初始化
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
 })();
