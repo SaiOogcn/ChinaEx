@@ -431,21 +431,19 @@
             
             // 绘制标题
             ctx.fillStyle = "#333";
-            ctx.font = "bold 28px 'Noto Sans SC', sans-serif";
+            ctx.font = "bold 34px 'Noto Sans SC', sans-serif";
             ctx.textAlign = "center";
             
             var authorEl = document.getElementById("author");
             var authorName = authorEl ? authorEl.textContent : "";
             var level = calculate();
             var title = authorName && authorName !== "点击设置名字" 
-                ? authorName + " 的历省等级" 
-                : "历省等级";
+                ? authorName + " 的历省等级 "+level 
+                : "历省等级 "+level;
             
-            ctx.fillText(title, canvas.width / 2, 30);
+            ctx.fillText(title, canvas.width / 2, 60);
             
-            // 绘制等级
-            ctx.font = "22px 'Noto Sans SC', sans-serif";
-            ctx.fillText("Level: " + level, canvas.width / 2, 58);
+
             
             // 绘制底部背景条（纯色，不透明）
             ctx.fillStyle = "#9dc3fb";
