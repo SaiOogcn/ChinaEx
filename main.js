@@ -489,7 +489,7 @@
             ctx.fillStyle = "#666";
             ctx.font = "11px sans-serif";
             ctx.textAlign = "right";
-            ctx.fillText("ChinaEx · 历省等级", canvas.width - 10, canvas.height - 8);
+            ctx.fillText("ChinaEx · Made by SaiOogcn", canvas.width - 10, canvas.height - 8);
             
             // 下载图片
             var link = document.createElement("a");
