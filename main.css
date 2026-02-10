@@ -114,13 +114,6 @@ html, body {
     font-weight: 700;
 }
 
-/* 竖排文字 - 使用 transform 实现跨浏览器兼容 */
-.labels text.vertical {
-    writing-mode: vertical-rl;
-    /* Safari 兼容：使用 transform 作为备选 */
-    -webkit-writing-mode: vertical-rl;
-}
-
 /* 选择表单 */
 .form {
     position: fixed;
