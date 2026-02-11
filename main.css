@@ -84,7 +84,7 @@ html, body {
 
 /* 省份路径样式 */
 .province {
-    stroke: #666;
+    stroke: #000;
     stroke-width: 0.15;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -107,7 +107,7 @@ html, body {
 /* 省份标签 */
 .labels text {
     font-size: 0.8px;
-    fill: #333;
+    fill: #000;
     pointer-events: none;
     text-anchor: middle;
     dominant-baseline: middle;
