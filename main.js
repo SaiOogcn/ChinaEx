@@ -7,6 +7,7 @@
 
     // 存储键名
     var STORAGE_KEY = "chinaex-levels";
+    var STORAGE_LANG_KEY = "chinaex-lang";
     
     // 等级颜色列表（从低到高）
     var LEVEL_COLORS = ["white", "blue", "green", "yellow", "orange", "red"];
@@ -30,15 +31,82 @@
         orange: "住宿",
         red: "居住"
     };
+
+    // 中英文文案
+    var I18N = {
+        zh: {
+            siteTitle: "制省等级",
+            langToggle: "English version",
+            resetButton: "重置",
+            shareButton: "保存图片",
+            nameButton: "设置名字",
+            resetConfirm: "确定要重置所有省份的等级吗？此操作不可撤销。",
+            namePrompt: "请输入您想要显示的名字：",
+            namePlaceholder: "点击设置名字",
+            imageGenerateFailed: "生成图片失败，请稍后重试",
+            pageTitlePrefix: "制省等级 - Level ",
+            exportTitlePrefix: "制省等级：",
+            exportTitleWithAuthor: " 的制省等级：",
+            downloadPrefix: "ChinaEx_Level_",
+            legendLabels: {
+                red: "常驻 (曾居住)",
+                orange: "宿泊 (曾过夜)",
+                yellow: "访问 (曾游玩)",
+                green: "歇脚 (曾换乘)",
+                blue: "行径 (曾路过)",
+                white: "未履 (从未涉足)"
+            },
+            formLabels: {
+                red: "常驻（曾居住）",
+                orange: "宿泊（曾过夜）",
+                yellow: "访问（曾游玩）",
+                green: "歇脚（曾换乘、休息）",
+                blue: "行径（曾路过）",
+                white: "未履（从未去过）"
+            }
+        },
+        en: {
+            siteTitle: "ChinaEX",
+            langToggle: "中文版",
+            resetButton: "Reset",
+            shareButton: "Save Image",
+            nameButton: "Set Name",
+            resetConfirm: "Reset all province levels? This action cannot be undone.",
+            namePrompt: "Please enter the name you want to display:",
+            namePlaceholder: "Click to set name",
+            imageGenerateFailed: "Failed to generate image. Please try again later.",
+            pageTitlePrefix: "ChinaEX - Level ",
+            exportTitlePrefix: "ChinaEX: ",
+            exportTitleWithAuthor: "'s ChinaEX: ",
+            downloadPrefix: "ChinaEX_Level_",
+            legendLabels: {
+                red: "Abide (曾居住)",
+                orange: "Lodge (曾过夜)",
+                yellow: "Call (曾游玩)",
+                green: "Halt (曾换乘)",
+                blue: "Tread (曾路过)",
+                white: "Untrod (从未涉足)"
+            },
+            formLabels: {
+                red: "Abide（曾居住）",
+                orange: "Lodge（曾过夜）",
+                yellow: "Call（曾游玩）",
+                green: "Halt（曾换乘、休息）",
+                blue: "Tread（曾路过）",
+                white: "Untrod（从未去过）"
+            }
+        }
+    };
     
     // 当前选中的省份
     var currentProvince = null;
+    var currentLang = "zh";
     
     // 省份等级数据
     var provinceLevels = {};
     
     // DOM 元素引用
-    var form, formTitle, svg;
+    var form, formTitle, svg, langToggleBtn;
 
     /**
      * 初始化应用
@@ -47,12 +115,98 @@
         form = document.querySelector(".form");
         formTitle = form.querySelector(".title .name");
         svg = document.getElementById("svg");
+        langToggleBtn = document.getElementById("lang-toggle");
         
         loadLevels();
+        loadLanguage();
         loadAuthorFromQuery();
         bindEvents();
         renderAllLevels();
+        applyLanguage();
         calculate();
+    }
+
+    function getLangText(key) {
+        return I18N[currentLang][key];
+    }
+
+    function loadLanguage() {
+        try {
+            var savedLang = localStorage.getItem(STORAGE_LANG_KEY);
+            if (savedLang === "en" || savedLang === "zh") {
+                currentLang = savedLang;
+            }
+        } catch (e) {
+            currentLang = "zh";
+        }
+    }
+
+    function saveLanguage() {
+        try {
+            localStorage.setItem(STORAGE_LANG_KEY, currentLang);
+        } catch (e) {
+            console.warn("无法保存语言设置");
+        }
+    }
+
+    function applyLanguage() {
+        document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
+
+        var siteTitleEl = document.querySelector(".site-title");
+        if (siteTitleEl) {
+            siteTitleEl.textContent = getLangText("siteTitle");
+        }
+
+        var resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+            resetBtn.textContent = getLangText("resetButton");
+        }
+
+        var shareBtn = document.getElementById("btn-share");
+        if (shareBtn) {
+            shareBtn.textContent = getLangText("shareButton");
+        }
+
+        var nameBtn = document.getElementById("btn-name");
+        if (nameBtn) {
+            nameBtn.textContent = getLangText("nameButton");
+        }
+
+        if (langToggleBtn) {
+            langToggleBtn.textContent = getLangText("langToggle");
+        }
+
+        // 更新表单等级文案
+        form.querySelectorAll(".level").forEach(function(label) {
+            var level = label.getAttribute("data-level");
+            var desc = label.querySelector(".desc");
+            if (desc && level) {
+                desc.textContent = getLangText("formLabels")[level];
+            }
+        });
+
+        // 更新图例文案
+        document.querySelectorAll(".legend .legend-item").forEach(function(item) {
+            var dot = item.querySelector(".color-dot");
+            if (!dot) {
+                return;
+            }
+            var color = "white";
+            ["red", "orange", "yellow", "green", "blue", "white"].forEach(function(c) {
+                if (dot.classList.contains(c)) {
+                    color = c;
+                }
+            });
+            item.innerHTML = '<span class="color-dot ' + color + '"></span> ' + getLangText("legendLabels")[color];
+        });
+
+        calculate();
+    }
+
+    function toggleLanguage() {
+        currentLang = currentLang === "zh" ? "en" : "zh";
+        saveLanguage();
+        applyLanguage();
     }
 
     /**
@@ -217,6 +371,13 @@
         if (nameBtn) {
             nameBtn.addEventListener("click", setAuthor);
         }
+
+        if (langToggleBtn) {
+            langToggleBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                toggleLanguage();
+            });
+        }
         
         // 作者区域点击
         var author = document.getElementById("author");
@@ -309,7 +470,7 @@
         }
         
         // 更新页面标题
-        document.title = "制省等级 - Level " + totalLevel;
+        document.title = getLangText("pageTitlePrefix") + totalLevel;
         
         return totalLevel;
     }
@@ -318,7 +479,7 @@
      * 重置所有省份等级
      */
     function resetAll() {
-        if (confirm("确定要重置所有省份的等级吗？此操作不可撤销。")) {
+        if (confirm(getLangText("resetConfirm"))) {
             provinceLevels = {};
             saveLevels();
             renderAllLevels();
@@ -347,7 +508,7 @@
     function setAuthor() {
         var params = new URLSearchParams(window.location.search);
         var currentName = params.get("t") || "";
-        var newName = prompt("请输入您想要显示的名字：", currentName);
+        var newName = prompt(getLangText("namePrompt"), currentName);
         
         if (newName !== null) {
             if (newName.trim()) {
@@ -367,7 +528,7 @@
             
             var authorEl = document.getElementById("author");
             if (authorEl) {
-                authorEl.textContent = newName.trim() || "点击设置名字";
+                authorEl.textContent = newName.trim() || getLangText("namePlaceholder");
             }
         }
     }
@@ -439,8 +600,8 @@
             var authorName = params.get("t") || "";
             var level = calculate();
             var title = authorName 
-                ? authorName + " 的制省等级：" + level 
-                : "制省等级：" + level;
+                ? authorName + getLangText("exportTitleWithAuthor") + level 
+                : getLangText("exportTitlePrefix") + level;
             
             ctx.fillText(title, canvas.width / 2, 60);
             
@@ -453,12 +614,12 @@
             // 绘制图例（使用你的注释）
             var legendY = canvas.height - 28;
             var legendColors = [
-                { color: "#e84c3d", name: "常驻(曾居住) +5" },
-                { color: "#d58337", name: "宿泊(曾过夜) +4" },
-                { color: "#f3c218", name: "访问(曾游玩) +3" },
-                { color: "#30cc70", name: "歇脚(曾换乘) +2" },
-                { color: "#3598db", name: "行径(曾路过) +1" },
-                { color: "#ffffff", name: "未履(从未涉足)" }
+                { color: "#e84c3d", name: getLangText("legendLabels").red + " +5" },
+                { color: "#d58337", name: getLangText("legendLabels").orange + " +4" },
+                { color: "#f3c218", name: getLangText("legendLabels").yellow + " +3" },
+                { color: "#30cc70", name: getLangText("legendLabels").green + " +2" },
+                { color: "#3598db", name: getLangText("legendLabels").blue + " +1" },
+                { color: "#ffffff", name: getLangText("legendLabels").white }
             ];
             
             ctx.font = "13px 'Noto Sans SC', sans-serif";
@@ -492,7 +653,7 @@
             
             // 下载图片
             var link = document.createElement("a");
-            link.download = "ChinaEx_Level_" + level + ".png";
+            link.download = getLangText("downloadPrefix") + level + ".png";
             link.href = canvas.toDataURL("image/png");
             link.click();
             
@@ -500,7 +661,7 @@
         };
         
         img.onerror = function() {
-            alert("生成图片失败，请稍后重试");
+            alert(getLangText("imageGenerateFailed"));
             URL.revokeObjectURL(url);
         };
         

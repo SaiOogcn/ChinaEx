@@ -4,7 +4,7 @@
 
 一个简洁优雅的中国省份足迹记录工具，灵感来源于 [JapanEx](https://github.com/ukyouz/JapanEx)。
 
-![preview](https://img.shields.io/badge/省份-34个-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![made with](https://img.shields.io/badge/made%20with-❤️-red)
+![preview](https://img.shields.io/badge/省份-34个-blue) ![license](https://img.shields.io/badge/license-MIT-green) 
 
 ## ✨ 功能特性
 

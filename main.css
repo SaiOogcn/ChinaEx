@@ -284,6 +284,25 @@ html, body {
     margin-right: 8px;
 }
 
+/* 语言切换 - 右下角 */
+.lang-toggle {
+    position: absolute;
+    right: 1em;
+    bottom: 1em;
+    z-index: 100;
+    border: none;
+    background: none;
+    color: #1d4b8f;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 4px 6px;
+}
+
+.lang-toggle:hover {
+    color: #0f2d57;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .header {
@@ -317,6 +336,12 @@ html, body {
     
     .form {
         width: 200px;
+    }
+
+    .lang-toggle {
+        right: 0.5em;
+        bottom: 0.5em;
+        font-size: 12px;
     }
     
     .author-section {
