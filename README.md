@@ -1,10 +1,19 @@
+# 语言选择 / Language
+
+- [中文版](#chinese-version)
+- [English Version](#english-version)
+
+---
+
+## <a id="chinese-version"></a>中文版
+
 # 🗺️ ChinaEx - 制省等级
 
 > 记录你走过的中国每一个省份
 
 一个简洁优雅的中国省份足迹记录工具，灵感来源于 [JapanEx](https://github.com/ukyouz/JapanEx)。
 
-![preview](https://img.shields.io/badge/省份-34个-blue) ![license](https://img.shields.io/badge/license-MIT-green) 
+![preview](https://img.shields.io/badge/省份-34个-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ 功能特性
 
@@ -112,8 +121,128 @@ html, body {
 
 MIT License © 2024
 
----
-
 <p align="center">
   <b>用脚步丈量中国 🇨🇳</b>
+</p>
+
+---
+
+## <a id="english-version"></a>English Version
+
+# 🗺️ ChinaEx - Province Tracker
+
+> Track every province you have visited in China.
+
+A clean and elegant China province travel-footprint tracker, inspired by [JapanEx](https://github.com/ukyouz/JapanEx).
+
+![preview](https://img.shields.io/badge/Provinces-34-blue) ![license](https://img.shields.io/badge/license-MIT-green)
+
+## ✨ Features
+
+- 🎨 **Interactive Map** - Click a province to set its level
+- 💾 **Auto Save** - Data is stored locally and persists after refresh
+- 🔗 **Shareable Link** - Share your footprint with friends via URL
+- 📸 **Image Export** - Generate a beautiful footprint image in one click
+- 📱 **Responsive Design** - Works on desktop and mobile devices
+- 🏷️ **Custom Name** - Display your name on the exported image
+
+## 🎯 Level Definitions
+
+| Color | Level | Description |
+|:---:|:---:|:---|
+| 🔴 | Resident | Lived there (more than 3 months) |
+| 🟠 | Stayed | Stayed overnight (up to 3 months) |
+| 🟡 | Visited | Traveled there without staying overnight |
+| 🟢 | Stopover | Transferred or took a short rest there |
+| 🔵 | Passed Through | Passed through only |
+| ⚪ | Not Visited | Never been there |
+
+## 🚀 Quick Start
+
+### Use Online
+
+Open `index.html` directly to use the app.
+
+### Run Locally
+
+```bash
+# Clone repository
+git clone https://github.com/SaiOogcn/ChinaEx.git
+
+# Enter directory
+cd ChinaEx
+
+# Start a local server with Python
+python -m http.server 8080
+
+# Or use Node.js
+npx serve
+```
+
+Then open `http://localhost:8080` in your browser.
+
+## 📖 How to Use
+
+1. **Set Level** - Click any province on the map and choose a level from the popup
+2. **Set Name** - Click the name button in the top-left corner to enter your name
+3. **Save Image** - Click the "Save Image" button in the top-right corner to export
+4. **Share Link** - Copy the URL in the browser address bar and send it to friends
+5. **Reset Data** - Click "Reset" to clear all records
+
+## 📁 Project Structure
+
+```
+ChinaEx/
+├── index.html      # Main page
+├── main.css        # Styles
+├── main.js         # Interaction logic
+├── path.txt        # Province map path data
+└── README.md       # Documentation
+```
+
+## 🛠️ Tech Stack
+
+- **HTML5** - Page structure
+- **CSS3** - Styling and animations
+- **Vanilla JavaScript** - No framework dependency
+- **SVG** - Vector map rendering
+- **LocalStorage** - Local data persistence
+- **Canvas API** - Image export
+
+## 📝 Customization
+
+### Change Colors
+
+Edit the level colors in `main.css`:
+
+```css
+.province.red { fill: #e84c3d; }    /* Resident */
+.province.orange { fill: #d58337; } /* Stayed */
+.province.yellow { fill: #f3c218; } /* Visited */
+.province.green { fill: #30cc70; }  /* Stopover */
+.province.blue { fill: #3598db; }   /* Passed Through */
+.province.white { fill: #ffffff; }  /* Not Visited */
+```
+
+### Change Background Color
+
+Edit the `body` background in `main.css`:
+
+```css
+html, body {
+    background: #9dc3fb; /* Change here */
+}
+```
+
+## 🙏 Acknowledgements
+
+- [JapanEx](https://github.com/ukyouz/JapanEx) - Project inspiration
+- Map data comes from public resources
+
+## 📄 License
+
+MIT License © 2024
+
+<p align="center">
+  <b>Measure China with your footsteps 🇨🇳</b>
 </p>
