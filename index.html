@@ -1,37 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>制省等级 - ChinaEx</title>
-    <meta name="description" content="ChinaEx 制省等级，记录你走过的中国每一个省份！">
-    <meta property="og:title" content="制省等级 - ChinaEx">
-    <meta property="og:description" content="记录你走过的中国每一个省份！">
-    <meta name="theme-color" content="#9dc3fb">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="main.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#9fc4fa">
+  <meta id="meta-description" name="description" content="ChinaEX &#x5236;&#x7701;&#x7B49;&#x7EA7;&#xFF0C;&#x8BB0;&#x5F55;&#x8D70;&#x8FC7;&#x7684;&#x4E2D;&#x56FD;&#x6BCF;&#x4E00;&#x4E2A;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;&#x3002;">
+  <meta id="og-title" property="og:title" content="ChinaEX">
+  <meta id="og-description" property="og:description" content="&#x8BB0;&#x5F55;&#x4F60;&#x8D70;&#x8FC7;&#x7684;&#x4E2D;&#x56FD;&#x6BCF;&#x4E00;&#x4E2A;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;&#x3002;">
+  <title>ChinaEX</title>
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <div class="container">
-        <!-- 左上角：标题和等级 -->
-        <header class="header">
-            <h1 class="site-title">制省等级</h1>
-            <div class="level-display">Level: <span id="level">0</span></div>
-        </header>
-        
-        <!-- 右上角：按钮 -->
-        <footer class="footer">
-            <button id="btn-name" class="btn">设置名字</button>
-            <button id="btn-share" class="btn btn-primary">保存图片</button>
-            <button id="btn-reset" class="btn btn-danger">重置</button>
-        </footer>
-        
-        <!-- 地图 SVG - 全屏显示 -->
-        <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 1 30 26">
-                <!-- 各省份路径 -->
-                <g id="area">
+  <main class="app-shell" aria-describedby="map-hint">
+    <aside class="brand-panel" aria-label="ChinaEX">
+      <p class="eyebrow">ChinaEX</p>
+      <h1 id="site-title">&#x5236;&#x7701;&#x7B49;&#x7EA7;</h1>
+      <p id="site-subtitle" class="subtitle">&#x8BB0;&#x5F55;&#x8D70;&#x8FC7;&#x7684;&#x4E2D;&#x56FD;&#x6BCF;&#x4E00;&#x5904;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;</p>
+      <div class="score-card" aria-live="polite">
+        <span id="score-label" class="score-label">&#x5236;&#x7701;&#x7B49;&#x7EA7;</span>
+        <strong id="level">0</strong>
+        <span id="visited">&#x5DF2;&#x5230;&#x8BBF; 0/34</span>
+      </div>
+      <section class="legend-card" aria-labelledby="legend-heading">
+        <h2 id="legend-heading">&#x9009;&#x62E9;&#x8DB3;&#x8FF9;&#x7B49;&#x7EA7;</h2>
+        <div id="legend" class="legend-list"></div>
+      </section>
+    </aside>
+
+    <section id="map-stage" class="map-stage" aria-label="&#x4E2D;&#x56FD;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;&#x5730;&#x56FE;">
+      <p id="map-hint" class="sr-only">&#x62D6;&#x52A8;&#x5730;&#x56FE;&#xFF0C;&#x53CC;&#x6307;&#x7F29;&#x653E;&#xFF1B;&#x70B9;&#x6309;&#x5730;&#x533A;&#x9009;&#x62E9;&#x7B49;&#x7EA7;&#x3002;</p>
+      <svg id="svg" viewBox="0 1 30 26" preserveAspectRatio="xMidYMid meet" role="group" aria-label="&#x4E2D;&#x56FD;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;&#x5730;&#x56FE;">
+        <rect class="map-background" x="0" y="1" width="30" height="26" rx=".35" />
+        <g id="map-content">
+          <g id="area">
                     <!-- 黑龙江 -->
                     <path id="黑龙江" class="province white" d="M 23 2 L 25 2 L 25 4 L 29 4 L 29 7 L 23 7 L 23 2 Z"/>
                     <!-- 吉林 -->
@@ -101,131 +102,63 @@
                     <!-- 宁夏 - 需要添加 -->
                     <path id="宁夏" class="province white" d="M 17 12 L 17 14 L 18 14 L 18 12 L 17 12 Z"/>
                 </g>
-                
-                <g id="label" class="labels">
-                    <text x="26" y="5.5" data-place="黑龙江">黑龙江</text>
-                    <text x="25" y="8" data-place="吉林">吉林</text>
-                    <text x="24.25" y="10" data-place="辽宁">辽宁</text>
-                    <text x="5" y="9" data-place="新疆">新疆</text>
-                    <text x="13" y="11" data-place="甘肃">甘肃</text>
-                    <text x="21.3" y="12.55" data-place="河北">河北</text>
-                    <!-- 北京 - 竖排 -->
-                    <text x="21.45" y="10.6" data-place="北京" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="21.55" dy="0">北</tspan>
-                        <tspan x="21.45" dy="0.8">京</tspan>
-                    </text>
-                    <!-- 天津 - 竖排 -->
-                    <text x="22.5" y="10.6" data-place="天津" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="22.6" dy="0">天</tspan>
-                        <tspan x="22.5" dy="0.8">津</tspan>
-                    </text>
-                    <!-- 山东 - 竖排 -->
-                    <text x="23.5" y="12.6" data-place="山东" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="23.6" dy="0">山</tspan>
-                        <tspan x="23.5" dy="0.8">东</tspan>
-                    </text>
-                    <text x="24.55" y="16.55" data-place="上海">沪</text>
-                    <text x="24" y="15.4" data-place="江苏">江苏</text>
-                    <text x="24" y="18" data-place="浙江">浙江</text>
-                    <text x="23" y="21" data-place="福建">福建</text>
-                    <text x="20.5" y="22.6" data-place="广东">广东</text>
-                    <text x="17" y="22" data-place="广西">广西</text>
-                    <text x="20.5" y="23.6" data-place="澳门">澳</text>
-                    <text x="21.5" y="23.6" data-place="香港">港</text>
-                    <text x="13" y="21" data-place="云南">云南</text>
-                    <text x="16.5" y="20" data-place="贵州">贵州</text>
-                    <text x="19.5" y="19.5" data-place="湖南">湖南</text>
-                    <text x="22" y="19" data-place="江西">江西</text>
-                    <text x="11" y="14" data-place="青海">青海</text>
-                    <!-- 西藏 - 竖排 -->
-                    <text x="6" y="14.5" data-place="西藏" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="6.1" dy="0">西</tspan>
-                        <tspan x="6" dy="0.8">藏</tspan>
-                    </text>
-                    <!-- 内蒙古 - 竖排 -->
-                    <text x="21.5" y="5" data-place="内蒙古" style="font-size: 0.65px; text-anchor: middle;">
-                        <tspan x="21.5" dy="0">内</tspan>
-                        <tspan x="21.5" dy="0.75">蒙</tspan>
-                        <tspan x="21.4" dy="0.75">古</tspan>
-                    </text>
-                    <text x="14" y="17" data-place="四川">四川</text>
-                    <!-- 山西 - 竖排 -->
-                    <text x="19.5" y="12.7" data-place="山西" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="19.6" dy="0">山</tspan>
-                        <tspan x="19.5" dy="0.8">西</tspan>
-                    </text>
-                    <!-- 陕西 - 竖排 -->
-                    <text x="18" y="14.6" data-place="陕西" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="18.1" dy="0">陕</tspan>
-                        <tspan x="18" dy="0.8">西</tspan>
-                    </text>
-                    <text x="20.5" y="15" data-place="河南">河南</text>
-                    <!-- 安徽 - 竖排 -->
-                    <text x="22.5" y="15.8" data-place="安徽" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="22.6" dy="0">安</tspan>
-                        <tspan x="22.5" dy="0.8">徽</tspan>
-                    </text>
-                    <text x="19.5" y="17" data-place="湖北">湖北</text>
-                    <text x="17" y="18.6" data-place="重庆">重庆</text>
-                    <text x="25" y="22" data-place="台湾">台</text>
-                    <text x="18" y="25.4" data-place="海南">海南</text>
-                    <!-- 宁夏 - 竖排 -->
-                    <text x="17.5" y="12.7" data-place="宁夏" style="font-size: 0.7px; text-anchor: middle;">
-                        <tspan x="17.6" dy="0">宁</tspan>
-                        <tspan x="17.5" dy="0.8">夏</tspan>
-                    </text>
-                </g>
-            </svg>
-        
-        <!-- 选择表单 -->
-        <div class="form">
-            <div class="title">
-                <span class="name">省份名</span>
-                <a class="search" href="#" target="_blank">🔍 搜索景点</a>
-                <button class="close-btn">×</button>
-            </div>
-            <div class="levels">
-                <label class="level" data-level="red">
-                    <span class="color-dot red"></span>
-                    <span class="desc">常驻（曾居住）</span>
-                </label>
-                <label class="level" data-level="orange">
-                    <span class="color-dot orange"></span>
-                    <span class="desc">宿泊（曾过夜）</span>
-                </label>
-                <label class="level" data-level="yellow">
-                    <span class="color-dot yellow"></span>
-                    <span class="desc">访问（曾游玩）</span>
-                </label>
-                <label class="level" data-level="green">
-                    <span class="color-dot green"></span>
-                    <span class="desc">歇脚（曾换乘、休息）</span>
-                </label>
-                <label class="level" data-level="blue">
-                    <span class="color-dot blue"></span>
-                    <span class="desc">行径（曾路过）</span>
-                </label>
-                <label class="level" data-level="white">
-                    <span class="color-dot white"></span>
-                    <span class="desc">未履（从未去过）</span>
-                </label>
-            </div>
-        </div>
-        
-        <!-- 图例 - 左下角 -->
-        <div class="legend">
-            <div class="legend-item"><span class="color-dot red"></span> 常驻 (曾居住)</div>
-            <div class="legend-item"><span class="color-dot orange"></span> 宿泊 (曾过夜)</div>
-            <div class="legend-item"><span class="color-dot yellow"></span> 访问 (曾游玩)</div>
-            <div class="legend-item"><span class="color-dot green"></span> 歇脚 (曾换乘)</div>
-            <div class="legend-item"><span class="color-dot blue"></span> 行径 (曾路过)</div>
-            <div class="legend-item"><span class="color-dot white"></span> 未履 (从未涉足)</div>
-        </div>
+          <g id="label" class="labels" aria-label="&#x5730;&#x533A;&#x6807;&#x7B7E;"></g>
+        </g>
+      </svg>
+      <button id="fit-map" class="map-float-button" type="button" aria-label="&#x9002;&#x914D;&#x5168;&#x56FE;">&#x2317; <span>&#x9002;&#x914D;&#x5168;&#x56FE;</span></button>
 
-        <!-- 语言切换 - 右下角 -->
-        <button id="lang-toggle" class="lang-toggle" type="button">English version</button>
-    </div>
-    
-    <script src="main.js"></script>
+      <article id="region-card" class="region-card" aria-live="polite" aria-hidden="true">
+        <div class="region-card__header">
+          <div>
+            <p id="region-kicker" class="region-card__kicker">&#x5730;&#x533A;&#x8BE6;&#x60C5;</p>
+            <h2 id="region-name">&#x5730;&#x533A;</h2>
+            <p id="region-current" class="region-card__current">&#x5F53;&#x524D;&#x7B49;&#x7EA7;&#xFF1A;&#x672A;&#x5230;&#x8BBF;</p>
+          </div>
+          <button id="close-region" class="icon-button" type="button" aria-label="&#x5173;&#x95ED;">&#xD7;</button>
+        </div>
+        <div id="level-options" class="level-options" role="group" aria-label="&#x9009;&#x62E9;&#x8DB3;&#x8FF9;&#x7B49;&#x7EA7;"></div>
+        <a id="region-search" class="region-search" target="_blank" rel="noopener">&#x641C;&#x7D22;&#x65C5;&#x6E38;&#x4FE1;&#x606F; &#x2197;</a>
+      </article>
+    </section>
+
+    <nav id="action-dock" class="action-dock" aria-label="&#x64CD;&#x4F5C;">
+      <button id="btn-language" class="button button--quiet" type="button">English</button>
+      <button id="btn-name" class="button button--quiet" type="button">&#x8BBE;&#x7F6E;&#x540D;&#x5B57;</button>
+      <button id="btn-copy" class="button button--quiet" type="button">&#x590D;&#x5236;&#x94FE;&#x63A5;</button>
+      <button id="btn-share" class="button button--quiet" type="button">&#x5206;&#x4EAB;</button>
+      <button id="btn-share-x" class="icon-action" type="button" aria-label="&#x5206;&#x4EAB;&#x5230; X">X</button>
+      <button id="btn-share-fb" class="icon-action" type="button" aria-label="&#x5206;&#x4EAB;&#x5230; Facebook">f</button>
+      <div class="button-menu">
+        <button id="btn-export" class="button button--primary" type="button" aria-haspopup="menu" aria-expanded="false">&#x5BFC;&#x51FA;</button>
+        <div id="export-menu" class="export-menu" role="menu" hidden>
+          <button id="btn-export-png" type="button" role="menuitem">&#x5BFC;&#x51FA; PNG</button>
+          <button id="btn-export-svg" type="button" role="menuitem">&#x5BFC;&#x51FA; SVG</button>
+        </div>
+      </div>
+      <button id="btn-reset" class="button button--danger" type="button">&#x91CD;&#x7F6E;</button>
+    </nav>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </main>
+
+  <dialog id="name-dialog" class="app-dialog" aria-labelledby="name-dialog-title">
+    <form method="dialog" id="name-form">
+      <div class="dialog-header"><h2 id="name-dialog-title">&#x663E;&#x793A;&#x540D;&#x5B57;</h2><button id="name-dialog-close" class="icon-button" value="cancel" aria-label="&#x5173;&#x95ED;">&#xD7;</button></div>
+      <p id="name-dialog-hint">&#x5B83;&#x4F1A;&#x663E;&#x793A;&#x5728;&#x5BFC;&#x51FA;&#x7684;&#x56FE;&#x7247;&#x548C;&#x5206;&#x4EAB;&#x94FE;&#x63A5;&#x4E2D;&#x3002;</p>
+      <label id="name-input-label" class="sr-only" for="name-input">&#x663E;&#x793A;&#x540D;&#x5B57;</label>
+      <input id="name-input" name="name" maxlength="48" autocomplete="name">
+      <div class="dialog-actions"><button id="name-cancel" class="button button--quiet" value="cancel">&#x53D6;&#x6D88;</button><button id="name-save" class="button button--primary" value="save">&#x4FDD;&#x5B58;</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="reset-dialog" class="app-dialog" aria-labelledby="reset-dialog-title">
+    <form method="dialog" id="reset-form">
+      <div class="dialog-header"><h2 id="reset-dialog-title">&#x91CD;&#x7F6E;&#x5168;&#x90E8;&#x8DB3;&#x8FF9;&#xFF1F;</h2><button id="reset-dialog-close" class="icon-button" value="cancel" aria-label="&#x5173;&#x95ED;">&#xD7;</button></div>
+      <p id="reset-dialog-text">&#x8FD9;&#x4F1A;&#x6E05;&#x9664;&#x672C;&#x8BBE;&#x5907;&#x4FDD;&#x5B58;&#x7684;&#x6240;&#x6709;&#x5730;&#x533A;&#x7B49;&#x7EA7;&#xFF0C;&#x4E14;&#x65E0;&#x6CD5;&#x64A4;&#x9500;&#x3002;</p>
+      <div class="dialog-actions"><button id="reset-cancel" class="button button--quiet" value="cancel">&#x53D6;&#x6D88;</button><button id="reset-confirm" class="button button--danger" value="reset">&#x786E;&#x8BA4;&#x91CD;&#x7F6E;</button></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>

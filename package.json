@@ -1,0 +1,16 @@
+﻿{
+  "name": "chinaex",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A static, shareable province-level travel experience map for China.",
+  "type": "module",
+  "scripts": {
+    "serve": "node ./scripts/serve.mjs",
+    "test": "node --test tests/data.test.mjs && playwright test",
+    "test:visual": "playwright test --grep @visual",
+    "lint": "node --check data.js && node --check state.js && node --check viewport.js && node --check export.js && node --check main.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

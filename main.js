@@ -1,677 +1,422 @@
-/**
- * ChinaEx - 制省等级
- * 记录你走过的中国每一个省份
- */
-(function() {
-    'use strict';
+﻿import { I18N, LEVELS, LEVEL_BY_ID, REGION_BY_ID, REGIONS, text } from "./data.js";
+import { createStore } from "./state.js";
+import { MapViewport } from "./viewport.js";
+import { downloadPng, downloadSvg } from "./export.js";
 
-    // 存储键名
-    var STORAGE_KEY = "chinaex-levels";
-    var STORAGE_LANG_KEY = "chinaex-lang";
-    
-    // 等级颜色列表（从低到高）
-    var LEVEL_COLORS = ["white", "blue", "green", "yellow", "orange", "red"];
-    
-    // 颜色对应分数
-    var COLOR_SCORE = {
-        white: 0,
-        blue: 1,
-        green: 2,
-        yellow: 3,
-        orange: 4,
-        red: 5
-    };
-    
-    // 颜色对应的中文描述
-    var COLOR_DESC = {
-        white: "未踏",
-        blue: "经过",
-        green: "到达",
-        yellow: "访问",
-        orange: "住宿",
-        red: "居住"
-    };
+const svgNs = "http://www.w3.org/2000/svg";
+const store = createStore();
+const dom = {
+  svg: document.querySelector("#svg"),
+  mapStage: document.querySelector("#map-stage"),
+  content: document.querySelector("#map-content"),
+  labels: document.querySelector("#label"),
+  metaDescription: document.querySelector("#meta-description"),
+  ogTitle: document.querySelector("#og-title"),
+  ogDescription: document.querySelector("#og-description"),
+  level: document.querySelector("#level"),
+  visited: document.querySelector("#visited"),
+  scoreLabel: document.querySelector("#score-label"),
+  siteTitle: document.querySelector("#site-title"),
+  siteSubtitle: document.querySelector("#site-subtitle"),
+  legendHeading: document.querySelector("#legend-heading"),
+  legend: document.querySelector("#legend"),
+  mapHint: document.querySelector("#map-hint"),
+  fit: document.querySelector("#fit-map"),
+  regionCard: document.querySelector("#region-card"),
+  regionKicker: document.querySelector("#region-kicker"),
+  regionName: document.querySelector("#region-name"),
+  regionCurrent: document.querySelector("#region-current"),
+  regionLevels: document.querySelector("#level-options"),
+  regionSearch: document.querySelector("#region-search"),
+  closeRegion: document.querySelector("#close-region"),
+  actionDock: document.querySelector("#action-dock"),
+  language: document.querySelector("#btn-language"),
+  name: document.querySelector("#btn-name"),
+  copy: document.querySelector("#btn-copy"),
+  share: document.querySelector("#btn-share"),
+  shareX: document.querySelector("#btn-share-x"),
+  shareFacebook: document.querySelector("#btn-share-fb"),
+  export: document.querySelector("#btn-export"),
+  exportMenu: document.querySelector("#export-menu"),
+  exportPng: document.querySelector("#btn-export-png"),
+  exportSvg: document.querySelector("#btn-export-svg"),
+  reset: document.querySelector("#btn-reset"),
+  toast: document.querySelector("#toast"),
+  nameDialog: document.querySelector("#name-dialog"),
+  nameForm: document.querySelector("#name-form"),
+  nameInput: document.querySelector("#name-input"),
+  nameInputLabel: document.querySelector("#name-input-label"),
+  nameHint: document.querySelector("#name-dialog-hint"),
+  nameDialogTitle: document.querySelector("#name-dialog-title"),
+  nameDialogClose: document.querySelector("#name-dialog-close"),
+  nameCancel: document.querySelector("#name-cancel"),
+  nameSave: document.querySelector("#name-save"),
+  resetDialog: document.querySelector("#reset-dialog"),
+  resetForm: document.querySelector("#reset-form"),
+  resetDialogTitle: document.querySelector("#reset-dialog-title"),
+  resetDialogText: document.querySelector("#reset-dialog-text"),
+  resetDialogClose: document.querySelector("#reset-dialog-close"),
+  resetCancel: document.querySelector("#reset-cancel"),
+  resetConfirm: document.querySelector("#reset-confirm")
+};
 
-    // 中英文文案
-    var I18N = {
-        zh: {
-            siteTitle: "制省等级",
-            langToggle: "English version",
-            resetButton: "重置",
-            shareButton: "保存图片",
-            nameButton: "设置名字",
-            resetConfirm: "确定要重置所有省份的等级吗？此操作不可撤销。",
-            namePrompt: "请输入您想要显示的名字：",
-            namePlaceholder: "点击设置名字",
-            imageGenerateFailed: "生成图片失败，请稍后重试",
-            pageTitlePrefix: "制省等级 - Level ",
-            exportTitlePrefix: "制省等级：",
-            exportTitleWithAuthor: " 的制省等级：",
-            downloadPrefix: "ChinaEx_Level_",
-            legendLabels: {
-                red: "常驻 (曾居住)",
-                orange: "宿泊 (曾过夜)",
-                yellow: "访问 (曾游玩)",
-                green: "歇脚 (曾换乘)",
-                blue: "行径 (曾路过)",
-                white: "未履 (从未涉足)"
-            },
-            formLabels: {
-                red: "常驻（曾居住）",
-                orange: "宿泊（曾过夜）",
-                yellow: "访问（曾游玩）",
-                green: "歇脚（曾换乘、休息）",
-                blue: "行径（曾路过）",
-                white: "未履（从未去过）"
-            }
-        },
-        en: {
-            siteTitle: "ChinaEX",
-            langToggle: "中文版",
-            resetButton: "Reset",
-            shareButton: "Save Image",
-            nameButton: "Set Name",
-            resetConfirm: "Reset all province levels? This action cannot be undone.",
-            namePrompt: "Please enter the name you want to display:",
-            namePlaceholder: "Click to set name",
-            imageGenerateFailed: "Failed to generate image. Please try again later.",
-            pageTitlePrefix: "ChinaEX - Level ",
-            exportTitlePrefix: "ChinaEX: ",
-            exportTitleWithAuthor: "'s ChinaEX: ",
-            downloadPrefix: "ChinaEX_Level_",
-            legendLabels: {
-                red: "Abide (曾居住)",
-                orange: "Lodge (曾过夜)",
-                yellow: "Call (曾游玩)",
-                green: "Halt (曾换乘)",
-                blue: "Tread (曾路过)",
-                white: "Untrod (从未涉足)"
-            },
-            formLabels: {
-                red: "Abide（曾居住）",
-                orange: "Lodge（曾过夜）",
-                yellow: "Call（曾游玩）",
-                green: "Halt（曾换乘、休息）",
-                blue: "Tread（曾路过）",
-                white: "Untrod（从未去过）"
-            }
-        }
-    };
-    
-    // 当前选中的省份
-    var currentProvince = null;
-    var currentLang = "zh";
-    
-    // 省份等级数据
-    var provinceLevels = {};
-    
-    // DOM 元素引用
-    var form, formTitle, svg, langToggleBtn;
+const viewport = new MapViewport(dom.svg, dom.content);
+let selectedRegionId = null;
+let lastRegionTrigger = null;
+let toastTimer = null;
 
-    /**
-     * 初始化应用
-     */
-    function init() {
-        form = document.querySelector(".form");
-        formTitle = form.querySelector(".title .name");
-        svg = document.getElementById("svg");
-        langToggleBtn = document.getElementById("lang-toggle");
-        
-        loadLevels();
-        loadLanguage();
-        loadAuthorFromQuery();
-        bindEvents();
-        renderAllLevels();
-        applyLanguage();
-        calculate();
+function state() { return store.getState(); }
+function t(key, values) { return text(state().lang, key, values); }
+
+function setText(node, value) { if (node) node.textContent = value; }
+
+function scoreAndVisited() {
+  return { score: store.score(), visited: store.visited() };
+}
+
+function createSvg(name, attributes = {}) {
+  const element = document.createElementNS(svgNs, name);
+  Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+  return element;
+}
+
+function appendLines(label, lines, vertical, className) {
+  label.textContent = "";
+  label.classList.toggle("label-en", className === "en");
+  if (lines.length === 1) {
+    label.textContent = lines[0];
+    return;
+  }
+  lines.forEach((line, index) => {
+    const span = createSvg("tspan", { x: label.getAttribute("x") });
+    span.setAttribute("dy", index === 0 ? (vertical ? "0" : "-.34") : (vertical ? ".72" : ".68"));
+    span.textContent = line;
+    label.append(span);
+  });
+}
+
+function divide(label, maxLength) {
+  if (label.length <= maxLength) return [label];
+  const cut = Math.ceil(label.length / 2);
+  return [label.slice(0, cut), label.slice(cut)];
+}
+
+function englishLabel(region, shape) {
+  const box = shape?.getBBox?.();
+  const width = Math.max(box?.width || 1, .8);
+  const height = Math.max(box?.height || 1, .8);
+  // This is deliberately conservative: SVG text is wider than its character count suggests.
+  // If the full name cannot fit clearly, use the readable registry short name as one intact unit.
+  const capacity = Math.max(3, Math.floor(width / .46));
+  const full = region.en;
+  if (full.length <= capacity) return { lines: [full], short: false, vertical: false, rotate: false };
+  const words = full.split(" ");
+  if (words.length === 2 && words.every((word) => word.length <= capacity) && height >= 1.55) {
+    return { lines: words, short: false, vertical: true, rotate: false };
+  }
+  const short = region.shortEn;
+  // A rotated whole short name remains legible in a thin north-south region; never stack characters.
+  const rotate = height > width * 1.2 && short.length * .32 <= height;
+  return { lines: [short], short: true, vertical: false, rotate };
+}
+
+function renderLabels() {
+  const { lang } = state();
+  dom.labels.replaceChildren();
+  REGIONS.forEach((region) => {
+    const shape = document.getElementById(region.id);
+    const labelAnchor = lang === "en" && region.label.en ? region.label.en : region.label;
+    if (labelAnchor !== region.label) {
+      dom.labels.append(createSvg("line", {
+        x1: region.label.x, y1: region.label.y, x2: labelAnchor.x, y2: labelAnchor.y, class: "map-label-leader"
+      }));
     }
+    const label = createSvg("text", {
+      x: labelAnchor.x,
+      y: labelAnchor.y,
+      class: "map-label",
+      tabindex: "0",
+      role: "button",
+      "data-region": region.id
+    });
+    const display = lang === "en"
+      ? englishLabel(region, shape)
+      : { lines: region.label.zhLines, short: false, vertical: region.label.zhLines.length > 1 };
+    appendLines(label, display.lines, display.vertical, lang);
+    label.dataset.short = String(display.short);
+    label.setAttribute("aria-label", region[lang] + t("labelSuffix", { level: I18N[lang].levelNames[state().levels[region.id]] }));
+    label.addEventListener("click", (event) => handleRegionSelection(region.id, event));
+    label.addEventListener("keydown", (event) => handleRegionKeydown(region.id, event));
+    label.addEventListener("pointerenter", () => setHover(region.id, true));
+    label.addEventListener("pointerleave", () => setHover(region.id, false));
+    dom.labels.append(label);
+  });
+}
 
-    function getLangText(key) {
-        return I18N[currentLang][key];
-    }
+function bindRegionFeatures() {
+  REGIONS.forEach((region) => {
+    const shape = document.getElementById(region.id);
+    if (!shape) return;
+    shape.setAttribute("tabindex", "0");
+    shape.setAttribute("role", "button");
+    shape.dataset.region = region.id;
+    shape.addEventListener("click", (event) => handleRegionSelection(region.id, event));
+    shape.addEventListener("keydown", (event) => handleRegionKeydown(region.id, event));
+    shape.addEventListener("pointerenter", () => setHover(region.id, true));
+    shape.addEventListener("pointerleave", () => setHover(region.id, false));
+  });
+}
 
-    function loadLanguage() {
-        try {
-            var savedLang = localStorage.getItem(STORAGE_LANG_KEY);
-            if (savedLang === "en" || savedLang === "zh") {
-                currentLang = savedLang;
-            }
-        } catch (e) {
-            currentLang = "zh";
-        }
-    }
+function handleRegionKeydown(regionId, event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    handleRegionSelection(regionId, event);
+  }
+  if (event.key === "Escape") closeRegion();
+}
 
-    function saveLanguage() {
-        try {
-            localStorage.setItem(STORAGE_LANG_KEY, currentLang);
-        } catch (e) {
-            console.warn("无法保存语言设置");
-        }
-    }
+function handleRegionSelection(regionId, event) {
+  if (viewport.shouldIgnoreClick()) return;
+  event.preventDefault();
+  event.stopPropagation();
+  selectedRegionId = regionId;
+  lastRegionTrigger = event.currentTarget;
+  renderRegionCard(event.clientX, event.clientY);
+}
 
-    function applyLanguage() {
-        document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
+function setHover(regionId, active) {
+  const shape = document.getElementById(regionId);
+  shape?.classList.toggle("is-hovered", active);
+}
 
-        var siteTitleEl = document.querySelector(".site-title");
-        if (siteTitleEl) {
-            siteTitleEl.textContent = getLangText("siteTitle");
-        }
+function renderMapLevels() {
+  const { levels, lang } = state();
+  REGIONS.forEach((region) => {
+    const shape = document.getElementById(region.id);
+    if (!shape) return;
+    Object.keys(LEVEL_BY_ID).forEach((level) => shape.classList.remove(level));
+    shape.classList.add(levels[region.id]);
+    shape.classList.toggle("is-active", selectedRegionId === region.id);
+    shape.setAttribute("aria-label", region[lang] + t("labelSuffix", { level: I18N[lang].levelNames[levels[region.id]] }));
+  });
+}
 
-        var resetBtn = document.getElementById("btn-reset");
-        if (resetBtn) {
-            resetBtn.textContent = getLangText("resetButton");
-        }
+function renderLegend() {
+  const { lang } = state();
+  dom.legend.replaceChildren();
+  LEVELS.forEach((level) => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    item.innerHTML = `<span class="legend-dot" style="background:${level.color}"></span><span>${I18N[lang].levelLabels[level.id]}</span><span class="legend-score">${level.score}</span>`;
+    dom.legend.append(item);
+  });
+}
 
-        var shareBtn = document.getElementById("btn-share");
-        if (shareBtn) {
-            shareBtn.textContent = getLangText("shareButton");
-        }
+function renderRegionCard(clientX, clientY) {
+  if (!selectedRegionId) return;
+  const current = state();
+  const region = REGION_BY_ID[selectedRegionId];
+  const level = current.levels[region.id];
+  setText(dom.regionKicker, t("detailsTitle"));
+  setText(dom.regionName, region[current.lang]);
+  setText(dom.regionCurrent, `${t("currentLevel")}: ${I18N[current.lang].levelLabels[level]}`);
+  setText(dom.closeRegion, "×");
+  dom.closeRegion.setAttribute("aria-label", t("close"));
+  dom.regionLevels.setAttribute("aria-label", t("chooseLevel"));
+  dom.regionLevels.replaceChildren();
+  LEVELS.forEach((entry) => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "level-option" + (entry.id === level ? " is-selected" : "");
+    option.setAttribute("aria-pressed", String(entry.id === level));
+    option.innerHTML = `<span class="level-option__dot" style="background:${entry.color}"></span><span>${I18N[current.lang].levelNames[entry.id]}</span><span class="level-option__score">${entry.score}</span>`;
+    option.addEventListener("click", (event) => { event.stopPropagation(); store.setLevel(region.id, entry.id); });
+    dom.regionLevels.append(option);
+  });
+  const searchTerm = current.lang === "en" ? `${region.en} travel` : `${region.zh} 旅游景点`;
+  dom.regionSearch.href = current.lang === "en"
+    ? `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`
+    : `https://www.baidu.com/s?wd=${encodeURIComponent(searchTerm)}`;
+  setText(dom.regionSearch, `${t("search")} ↗`);
+  dom.regionCard.classList.add("is-open");
+  dom.regionCard.setAttribute("aria-hidden", "false");
+  placeRegionCard(clientX, clientY);
+}
 
-        var nameBtn = document.getElementById("btn-name");
-        if (nameBtn) {
-            nameBtn.textContent = getLangText("nameButton");
-        }
+function placeRegionCard(clientX = innerWidth / 2, clientY = innerHeight / 2) {
+  if (matchMedia("(max-width: 760px), (max-height: 600px)").matches) return;
+  const margin = 16;
+  const width = dom.regionCard.offsetWidth;
+  const height = dom.regionCard.offsetHeight;
+  let left = clientX + 16;
+  let top = clientY + 16;
+  if (left + width > innerWidth - margin) left = clientX - width - 16;
+  if (top + height > innerHeight - margin) top = innerHeight - height - margin;
+  dom.regionCard.style.left = `${Math.max(margin, left)}px`;
+  dom.regionCard.style.top = `${Math.max(margin, top)}px`;
+  dom.regionCard.style.right = "auto";
+  dom.regionCard.style.bottom = "auto";
+}
 
-        if (langToggleBtn) {
-            langToggleBtn.textContent = getLangText("langToggle");
-        }
+function closeRegion() {
+  selectedRegionId = null;
+  dom.regionCard.classList.remove("is-open");
+  dom.regionCard.setAttribute("aria-hidden", "true");
+  renderMapLevels();
+  lastRegionTrigger?.focus?.();
+}
 
-        // 更新表单等级文案
-        form.querySelectorAll(".level").forEach(function(label) {
-            var level = label.getAttribute("data-level");
-            var desc = label.querySelector(".desc");
-            if (desc && level) {
-                desc.textContent = getLangText("formLabels")[level];
-            }
-        });
+function renderLanguage() {
+  const current = state();
+  const dictionary = I18N[current.lang];
+  document.documentElement.lang = current.lang === "en" ? "en" : "zh-CN";
+  document.title = `${dictionary.appName} · ${store.score()}`;
+  dom.metaDescription?.setAttribute("content", dictionary.metaDescription);
+  dom.ogTitle?.setAttribute("content", document.title);
+  dom.ogDescription?.setAttribute("content", dictionary.metaDescription);
+  dom.mapStage?.setAttribute("aria-label", dictionary.mapLabel);
+  dom.svg.setAttribute("aria-label", dictionary.mapLabel);
+  dom.labels.setAttribute("aria-label", dictionary.mapLabels);
+  dom.actionDock?.setAttribute("aria-label", dictionary.actions);
+  setText(dom.siteTitle, dictionary.appName);
+  setText(dom.siteSubtitle, dictionary.appSubtitle);
+  setText(dom.scoreLabel, dictionary.level);
+  setText(dom.visited, t("visited", { count: store.visited(), total: REGIONS.length }));
+  setText(dom.legendHeading, t("chooseLevel"));
+  setText(dom.mapHint, t("mapHint"));
+  setText(dom.fit.querySelector("span"), t("fitMap"));
+  dom.fit.setAttribute("aria-label", t("fitMap"));
+  setText(dom.language, dictionary.language);
+  setText(dom.name, t("setName"));
+  setText(dom.copy, t("copyLink"));
+  setText(dom.share, t("share"));
+  dom.shareX.setAttribute("aria-label", dictionary.shareX);
+  dom.shareFacebook.setAttribute("aria-label", dictionary.shareFacebook);
+  setText(dom.export, t("export"));
+  setText(dom.exportPng, t("exportPng"));
+  setText(dom.exportSvg, t("exportSvg"));
+  setText(dom.reset, t("reset"));
+  setText(dom.closeRegion, "\u00d7");
+  dom.closeRegion.setAttribute("aria-label", t("close"));
+  setText(dom.nameDialogTitle, t("nameDialogTitle"));
+  setText(dom.nameHint, t("nameDialogHint"));
+  setText(dom.nameInputLabel, t("displayNameLabel"));
+  dom.nameInput.placeholder = t("namePlaceholder");
+  setText(dom.nameDialogClose, "\u00d7");
+  dom.nameDialogClose.setAttribute("aria-label", t("close"));
+  setText(dom.nameCancel, t("cancel"));
+  setText(dom.nameSave, t("save"));
+  setText(dom.resetDialogTitle, t("resetDialogTitle"));
+  setText(dom.resetDialogText, t("resetDialogText"));
+  setText(dom.resetDialogClose, "\u00d7");
+  dom.resetDialogClose.setAttribute("aria-label", t("close"));
+  setText(dom.resetCancel, t("cancel"));
+  setText(dom.resetConfirm, t("resetConfirm"));
+  renderLegend();
+  renderLabels();
+}
 
-        // 更新图例文案
-        document.querySelectorAll(".legend .legend-item").forEach(function(item) {
-            var dot = item.querySelector(".color-dot");
-            if (!dot) {
-                return;
-            }
-            var color = "white";
-            ["red", "orange", "yellow", "green", "blue", "white"].forEach(function(c) {
-                if (dot.classList.contains(c)) {
-                    color = c;
-                }
-            });
-            item.innerHTML = '<span class="color-dot ' + color + '"></span> ' + getLangText("legendLabels")[color];
-        });
+function renderAll() {
+  const { score } = scoreAndVisited();
+  setText(dom.level, score);
+  renderLanguage();
+  renderMapLevels();
+  if (selectedRegionId) renderRegionCard();
+}
 
-        calculate();
-    }
+function showToast(message) {
+  clearTimeout(toastTimer);
+  setText(dom.toast, message);
+  dom.toast.hidden = false;
+  toastTimer = setTimeout(() => { dom.toast.hidden = true; }, 2600);
+}
 
-    function toggleLanguage() {
-        currentLang = currentLang === "zh" ? "en" : "zh";
-        saveLanguage();
-        applyLanguage();
-    }
+async function copyShareLink() {
+  const value = store.shareUrl();
+  try {
+    await navigator.clipboard.writeText(value);
+    showToast(t("copied"));
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    showToast(copied ? t("copied") : t("copyFailed"));
+  }
+}
 
-    /**
-     * 从 URL hash 或 localStorage 加载等级数据
-     */
-    function loadLevels() {
-        // 优先从 URL hash 加载
-        if (window.location.hash && window.location.hash.length > 1) {
-            var hash = window.location.hash.substring(1);
-            var provinces = document.querySelectorAll(".province");
-            var i = 0;
-            provinces.forEach(function(p) {
-                if (hash[i] !== undefined) {
-                    var level = parseInt(hash[i]) || 0;
-                    provinceLevels[p.id] = levelToColor(level);
-                }
-                i++;
-            });
-            return;
-        }
-        
-        // 从 localStorage 加载
-        try {
-            var saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                provinceLevels = JSON.parse(saved);
-            }
-        } catch (e) {
-            provinceLevels = {};
-        }
-    }
+function shareText() {
+  const { score, visited } = scoreAndVisited();
+  return t("shareText", { level: score, count: visited, total: REGIONS.length });
+}
 
-    /**
-     * 保存等级数据到 localStorage 和 URL hash
-     */
-    function saveLevels() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(provinceLevels));
-        } catch (e) {
-            console.warn("无法保存到 localStorage");
-        }
-        updateHash();
-    }
+async function nativeShare() {
+  const url = store.shareUrl();
+  if (navigator.share) {
+    try { await navigator.share({ title: document.title, text: shareText(), url }); return; } catch (error) { if (error.name === "AbortError") return; }
+  }
+  await copyShareLink();
+}
 
-    /**
-     * 更新 URL hash
-     */
-    function updateHash() {
-        var provinces = document.querySelectorAll(".province");
-        var hash = "";
-        provinces.forEach(function(p) {
-            var color = provinceLevels[p.id] || "white";
-            hash += COLOR_SCORE[color] || 0;
-        });
-        history.replaceState(null, "", "#" + hash);
-    }
+function externalShare(network) {
+  const url = encodeURIComponent(store.shareUrl());
+  const quote = encodeURIComponent(shareText());
+  const target = network === "x"
+    ? `https://x.com/intent/post?text=${quote}&url=${url}`
+    : `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`;
+  window.open(target, "_blank", "noopener,noreferrer,width=680,height=550");
+}
 
-    /**
-     * 将等级数字转换为颜色名称
-     */
-    function levelToColor(level) {
-        var idx = Math.min(Math.max(0, level), 5);
-        return LEVEL_COLORS[idx];
-    }
+function exportOptions() {
+  const current = state();
+  const { score, visited } = scoreAndVisited();
+  return { svg: dom.svg, state: current, score, visited };
+}
 
-    /**
-     * 渲染所有省份的等级颜色
-     */
-    function renderAllLevels() {
-        var provinces = document.querySelectorAll(".province");
-        provinces.forEach(function(province) {
-            var color = provinceLevels[province.id] || "white";
-            LEVEL_COLORS.forEach(function(c) {
-                province.classList.remove(c);
-            });
-            province.classList.add(color);
-        });
-    }
+function openNameDialog() {
+  dom.nameInput.value = state().name;
+  dom.nameDialog.showModal();
+  setTimeout(() => dom.nameInput.focus(), 0);
+}
 
-    /**
-     * 设置省份等级
-     */
-    function setProvinceLevel(provinceName, color) {
-        provinceLevels[provinceName] = color;
-        saveLevels();
-        
-        var province = document.getElementById(provinceName);
-        if (province) {
-            LEVEL_COLORS.forEach(function(c) {
-                province.classList.remove(c);
-            });
-            province.classList.add(color);
-        }
-        calculate();
-    }
+function openResetDialog() { dom.resetDialog.showModal(); }
+function toggleExportMenu() {
+  const next = dom.exportMenu.hidden;
+  dom.exportMenu.hidden = !next;
+  dom.export.setAttribute("aria-expanded", String(next));
+}
+function closeExportMenu() { dom.exportMenu.hidden = true; dom.export.setAttribute("aria-expanded", "false"); }
 
-    /**
-     * 绑定事件监听器
-     */
-    function bindEvents() {
-        // 省份点击事件
-        document.querySelectorAll(".province").forEach(function(province) {
-            province.addEventListener("click", function(e) {
-                e.stopPropagation();
-                showForm(this.id, e.clientX, e.clientY);
-            });
-        });
-        
-        // 省份标签点击事件（可选）
-        document.querySelectorAll("#label text").forEach(function(label) {
-            label.addEventListener("click", function(e) {
-                e.stopPropagation();
-                var place = this.getAttribute("data-place");
-                if (place) {
-                    showForm(place, e.clientX, e.clientY);
-                }
-            });
-        });
-        
-        // 等级选择事件
-        form.querySelectorAll(".level").forEach(function(label) {
-            label.addEventListener("click", function(e) {
-                e.stopPropagation();
-                var color = this.dataset.level;
-                if (currentProvince && color) {
-                    setProvinceLevel(currentProvince, color);
-                    updateFormSelection(color);
-                }
-            });
-        });
-        
-        // 关闭按钮事件
-        var closeBtn = form.querySelector(".close-btn");
-        if (closeBtn) {
-            closeBtn.addEventListener("click", function(e) {
-                e.stopPropagation();
-                closeForm();
-            });
-        }
-        
-        // 点击其他区域关闭表单
-        document.addEventListener("click", function(e) {
-            if (!form.contains(e.target) && !e.target.classList.contains("province")) {
-                closeForm();
-            }
-        });
-        
-        // 重置按钮
-        var resetBtn = document.getElementById("btn-reset");
-        if (resetBtn) {
-            resetBtn.addEventListener("click", resetAll);
-        }
-        
-        // 保存图片按钮
-        var shareBtn = document.getElementById("btn-share");
-        if (shareBtn) {
-            shareBtn.addEventListener("click", saveAsImage);
-        }
-        
-        // 设置名字按钮
-        var nameBtn = document.getElementById("btn-name");
-        if (nameBtn) {
-            nameBtn.addEventListener("click", setAuthor);
-        }
+function bindControls() {
+  dom.language.addEventListener("click", () => store.setLanguage(state().lang === "zh" ? "en" : "zh"));
+  dom.fit.addEventListener("click", () => viewport.fit());
+  dom.closeRegion.addEventListener("click", closeRegion);
+  dom.name.addEventListener("click", openNameDialog);
+  dom.copy.addEventListener("click", copyShareLink);
+  dom.share.addEventListener("click", nativeShare);
+  dom.shareX.addEventListener("click", () => externalShare("x"));
+  dom.shareFacebook.addEventListener("click", () => externalShare("facebook"));
+  dom.export.addEventListener("click", toggleExportMenu);
+  dom.exportPng.addEventListener("click", async () => { closeExportMenu(); await downloadPng(exportOptions()); });
+  dom.exportSvg.addEventListener("click", async () => { closeExportMenu(); await downloadSvg(exportOptions()); });
+  dom.reset.addEventListener("click", openResetDialog);
+  dom.nameForm.addEventListener("submit", (event) => { if (event.submitter?.value === "save") store.setName(dom.nameInput.value); });
+  dom.resetForm.addEventListener("submit", (event) => { if (event.submitter?.value === "reset") { store.reset(); closeRegion(); } });
+  document.addEventListener("click", (event) => {
+    if (!dom.exportMenu.hidden && !event.target.closest(".button-menu")) closeExportMenu();
+    if (selectedRegionId && !event.target.closest("#region-card") && !event.target.closest(".province") && !event.target.closest(".map-label")) closeRegion();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeExportMenu(); if (selectedRegionId) closeRegion(); }
+  });
+  window.addEventListener("resize", () => { if (selectedRegionId) placeRegionCard(); });
+}
 
-        if (langToggleBtn) {
-            langToggleBtn.addEventListener("click", function(e) {
-                e.stopPropagation();
-                toggleLanguage();
-            });
-        }
-        
-        // 作者区域点击
-        var author = document.getElementById("author");
-        if (author) {
-            author.addEventListener("click", setAuthor);
-        }
-        
-        // 键盘事件
-        document.addEventListener("keydown", function(e) {
-            if (e.key === "Escape") {
-                closeForm();
-            }
-        });
-    }
-
-    /**
-     * 显示选择表单
-     */
-    function showForm(provinceName, x, y) {
-        currentProvince = provinceName;
-        formTitle.textContent = provinceName;
-        
-        // 更新搜索链接
-        var searchLink = form.querySelector(".title .search");
-        if (searchLink) {
-            searchLink.href = "https://www.baidu.com/s?wd=" + encodeURIComponent(provinceName + " 旅游景点");
-        }
-        
-        // 更新选中状态
-        var currentColor = provinceLevels[provinceName] || "white";
-        updateFormSelection(currentColor);
-        
-        // 计算位置
-        var left = x + 15;
-        var top = y + 15;
-        
-        // 边界检测
-        if (left + 220 > window.innerWidth) {
-            left = x - 235;
-        }
-        if (top + 320 > window.innerHeight) {
-            top = y - 320;
-        }
-        left = Math.max(10, left);
-        top = Math.max(10, top);
-        
-        form.style.left = left + "px";
-        form.style.top = top + "px";
-        form.classList.add("show");
-    }
-
-    /**
-     * 更新表单中的选中状态
-     */
-    function updateFormSelection(color) {
-        form.querySelectorAll(".level").forEach(function(label) {
-            label.classList.remove("selected");
-            if (label.dataset.level === color) {
-                label.classList.add("selected");
-            }
-        });
-    }
-
-    /**
-     * 关闭选择表单
-     */
-    function closeForm() {
-        form.classList.remove("show");
-        currentProvince = null;
-    }
-
-    /**
-     * 计算总等级分数
-     */
-    function calculate() {
-        var totalLevel = 0;
-        var visitedCount = 0;
-        
-        for (var key in provinceLevels) {
-            var score = COLOR_SCORE[provinceLevels[key]] || 0;
-            totalLevel += score;
-            if (score > 0) {
-                visitedCount++;
-            }
-        }
-        
-        var levelEl = document.getElementById("level");
-        if (levelEl) {
-            levelEl.textContent = totalLevel;
-        }
-        
-        // 更新页面标题
-        document.title = getLangText("pageTitlePrefix") + totalLevel;
-        
-        return totalLevel;
-    }
-
-    /**
-     * 重置所有省份等级
-     */
-    function resetAll() {
-        if (confirm(getLangText("resetConfirm"))) {
-            provinceLevels = {};
-            saveLevels();
-            renderAllLevels();
-            calculate();
-            closeForm();
-        }
-    }
-
-    /**
-     * 从 URL 参数加载作者名
-     */
-    function loadAuthorFromQuery() {
-        var params = new URLSearchParams(window.location.search);
-        var name = params.get("t");
-        if (name) {
-            var authorEl = document.getElementById("author");
-            if (authorEl) {
-                authorEl.textContent = name;
-            }
-        }
-    }
-
-    /**
-     * 设置作者名
-     */
-    function setAuthor() {
-        var params = new URLSearchParams(window.location.search);
-        var currentName = params.get("t") || "";
-        var newName = prompt(getLangText("namePrompt"), currentName);
-        
-        if (newName !== null) {
-            if (newName.trim()) {
-                params.set("t", newName.trim());
-            } else {
-                params.delete("t");
-            }
-            
-            var newUrl = window.location.pathname;
-            if (params.toString()) {
-                newUrl += "?" + params.toString();
-            }
-            if (window.location.hash) {
-                newUrl += window.location.hash;
-            }
-            window.history.replaceState(null, "", newUrl);
-            
-            var authorEl = document.getElementById("author");
-            if (authorEl) {
-                authorEl.textContent = newName.trim() || getLangText("namePlaceholder");
-            }
-        }
-    }
-
-    /**
-     * 保存为图片
-     */
-    function saveAsImage() {
-        var svgElement = document.getElementById("svg");
-        
-        // 克隆 SVG
-        var svgClone = svgElement.cloneNode(true);
-        
-        // 内联样式到 SVG（解决导出时样式丢失问题）
-        var styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-        styleElement.textContent = `
-            .province { stroke: #666; stroke-width: 0.15; }
-            .province.white { fill: #ffffff; }
-            .province.blue { fill: #3598db; }
-            .province.green { fill: #30cc70; }
-            .province.yellow { fill: #f3c218; }
-            .province.orange { fill: #d58337; }
-            .province.red { fill: #e84c3d; }
-            #label text, .labels text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
-            text { font-size: 0.8px; fill: #333; font-family: sans-serif; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
-        `;
-        svgClone.insertBefore(styleElement, svgClone.firstChild);
-        
-        // 设置 SVG 尺寸属性（确保正确渲染）
-        svgClone.setAttribute("width", "800");
-        svgClone.setAttribute("height", "700");
-        
-        // 获取 SVG 数据
-        var svgData = new XMLSerializer().serializeToString(svgClone);
-        var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-        var url = URL.createObjectURL(svgBlob);
-        
-        var canvas = document.createElement("canvas");
-        var ctx = canvas.getContext("2d");
-        var img = new Image();
-        
-        img.onload = function() {
-            // 设置画布尺寸（增加上下空间给标题和图例）
-            var headerHeight = 70;
-            var footerHeight = 50;
-            var mapWidth = 800;
-            var mapHeight = 700;
-            canvas.width = mapWidth;
-            canvas.height = headerHeight + mapHeight + footerHeight;
-            
-            // 绘制背景
-            ctx.fillStyle = "#9dc3fb";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // 绘制地图（偏移到标题下方）
-            ctx.drawImage(img, 0, headerHeight, mapWidth, mapHeight);
-            
-            // 绘制顶部背景条（纯色，不透明）
-            ctx.fillStyle = "#9dc3fb";
-            ctx.fillRect(0, 0, canvas.width, headerHeight);
-            
-            // 绘制标题
-            ctx.fillStyle = "#333";
-            ctx.font = "bold 34px 'Noto Sans SC', sans-serif";
-            ctx.textAlign = "center";
-            
-            // 从 URL 参数获取名字
-            var params = new URLSearchParams(window.location.search);
-            var authorName = params.get("t") || "";
-            var level = calculate();
-            var title = authorName 
-                ? authorName + getLangText("exportTitleWithAuthor") + level 
-                : getLangText("exportTitlePrefix") + level;
-            
-            ctx.fillText(title, canvas.width / 2, 60);
-            
-
-            
-            // 绘制底部背景条（纯色，不透明）
-            ctx.fillStyle = "#9dc3fb";
-            ctx.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
-            
-            // 绘制图例（使用你的注释）
-            var legendY = canvas.height - 28;
-            var legendColors = [
-                { color: "#e84c3d", name: getLangText("legendLabels").red + " +5" },
-                { color: "#d58337", name: getLangText("legendLabels").orange + " +4" },
-                { color: "#f3c218", name: getLangText("legendLabels").yellow + " +3" },
-                { color: "#30cc70", name: getLangText("legendLabels").green + " +2" },
-                { color: "#3598db", name: getLangText("legendLabels").blue + " +1" },
-                { color: "#ffffff", name: getLangText("legendLabels").white }
-            ];
-            
-            ctx.font = "13px 'Noto Sans SC', sans-serif";
-            ctx.textAlign = "left";
-            
-            var legendX = 35;
-            var spacing = 125;
-            
-            legendColors.forEach(function(item, index) {
-                var x = legendX + index * spacing;
-                
-                // 绘制颜色圆点
-                ctx.beginPath();
-                ctx.arc(x, legendY, 8, 0, Math.PI * 2);
-                ctx.fillStyle = item.color;
-                ctx.fill();
-                ctx.strokeStyle = "#666";
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                
-                // 绘制文字
-                ctx.fillStyle = "#333";
-                ctx.fillText(item.name, x + 14, legendY + 4);
-            });
-            
-            // 绘制水印
-            ctx.fillStyle = "#666";
-            ctx.font = "11px sans-serif";
-            ctx.textAlign = "right";
-            ctx.fillText("ChinaEx · Made by SaiOogcn", canvas.width - 10, canvas.height - 8);
-            
-            // 下载图片
-            var link = document.createElement("a");
-            link.download = getLangText("downloadPrefix") + level + ".png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-            
-            URL.revokeObjectURL(url);
-        };
-        
-        img.onerror = function() {
-            alert(getLangText("imageGenerateFailed"));
-            URL.revokeObjectURL(url);
-        };
-        
-        img.src = url;
-    }
-
-    // 初始化
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-    } else {
-        init();
-    }
-})();
+bindRegionFeatures();
+bindControls();
+store.subscribe(renderAll);
+requestAnimationFrame(renderAll);
