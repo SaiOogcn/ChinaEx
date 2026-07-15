@@ -18,7 +18,10 @@ function triggerDownload(blob, filename) {
 function shortLabelEntries(svg, lang) {
   if (lang !== "en") return [];
   return [...svg.querySelectorAll(".map-label[data-short='true']")]
-    .map((label) => REGION_BY_ID[label.dataset.region])
+    .map((label) => {
+      const region = REGION_BY_ID[label.dataset.region];
+      return region && { region, marker: label.dataset.mapKey || label.textContent.trim() };
+    })
     .filter(Boolean);
 }
 
@@ -44,11 +47,11 @@ export function buildExportSvg({ svg, state, score, visited }) {
   }).join("");
   const indexMarkup = index.length ? `
     <g transform="translate(58 1003)">
-      <text class="index-title" y="0">${escapeXml(text(lang, "shortNameIndex"))}</text>
-      ${index.map((region, i) => {
+      <text class="index-title" y="0">${escapeXml(text(lang, "mapKey"))}</text>
+      ${index.map((entry, i) => {
         const column = i % 2;
         const row = Math.floor(i / 2);
-        return `<text class="index-text" x="${column * 540}" y="${28 + row * 26}">${escapeXml(region.shortEn)} · ${escapeXml(region.en)}</text>`;
+        return `<text class="index-text" x="${column * 540}" y="${28 + row * 26}">${escapeXml(entry.marker)} · ${escapeXml(entry.region.en)}</text>`;
       }).join("")}
     </g>` : "";
 

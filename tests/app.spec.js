@@ -42,7 +42,8 @@ test("path, label, and keyboard selection update the state and share URL", async
   await expect(page.locator("#region-card")).toHaveClass(/is-open/);
 });
 
-test("English rendering supplies readable region labels and translated controls", async ({ page }) => {
+test("English rendering supplies readable region labels and translated controls", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phone overview uses the full numbered map key test below.");
   await page.goto("/");
   await page.locator("#btn-language").click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -99,9 +100,8 @@ test("SVG export contains the current English export index", async ({ page }) =>
   const stream = await download.createReadStream();
   let source = "";
   for await (const chunk of stream) source += chunk;
-  expect(source).toContain("Short-name index");
-  expect(source).toContain("Beij.");
-  expect(source).toContain("Beijing");
+  expect(source).toContain("Map key");
+  expect(source).toContain(`07 ${String.fromCharCode(0xb7)} Beijing`);
 });
 
 test("fit map resets a zoomed viewport", async ({ page }) => {
@@ -135,4 +135,33 @@ test("landscape overview stays clear of the action dock", async ({ page }) => {
   expect(geometry.union.top).toBeGreaterThanOrEqual(geometry.svg.top - 1);
   expect(geometry.union.bottom).toBeLessThanOrEqual(geometry.svg.bottom + 1);
   expect(geometry.union.bottom).toBeLessThanOrEqual(geometry.dock.top - 4);
+});
+
+test("changing a desktop level keeps the region card anchored in place", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "The mobile card is intentionally bottom-anchored.");
+  await page.goto("/");
+  await page.locator(".map-label").first().click();
+  await expect(page.locator("#region-card")).toHaveClass(/is-open/);
+  const before = await page.locator("#region-card").boundingBox();
+  await page.locator("#level-options button").first().click();
+  await expect(page.locator("#level")).toHaveText("5");
+  const after = await page.locator("#region-card").boundingBox();
+  expect(before).not.toBeNull();
+  expect(after).not.toBeNull();
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(8);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(8);
+});
+
+test("English phone overview provides a complete numbered map key", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "This compact overview behavior is specific to phone-sized screens.");
+  await page.goto("/#v=2&l=0000000000000000000000000000000000&lang=en");
+  await expect(page.locator(".map-label.map-marker")).toHaveCount(34);
+  await page.locator("#map-key-toggle").click();
+  await expect(page.locator("#map-key-dialog")).toHaveAttribute("open", "");
+  await expect(page.locator("#map-key-dialog-list .map-key-entry")).toHaveCount(34);
+  await expect(page.locator("#map-key-dialog-list .map-key-entry").first()).toContainText("01");
+  await expect(page.locator("#map-key-dialog-list .map-key-entry").first()).toContainText("Heilongjiang");
+  await page.locator("#map-key-dialog-list .map-key-entry").nth(6).click();
+  await expect(page.locator("#map-key-dialog")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#region-name")).toHaveText("Beijing");
 });

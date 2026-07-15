@@ -25,6 +25,11 @@
         <h2 id="legend-heading">&#x9009;&#x62E9;&#x8DB3;&#x8FF9;&#x7B49;&#x7EA7;</h2>
         <div id="legend" class="legend-list"></div>
       </section>
+      <section id="english-map-key" class="english-map-key" aria-labelledby="map-key-title" hidden>
+        <h2 id="map-key-title">Short-name index</h2>
+        <p id="map-key-hint"></p>
+        <div id="map-key-list" class="map-key-list"></div>
+      </section>
     </aside>
 
     <section id="map-stage" class="map-stage" aria-label="&#x4E2D;&#x56FD;&#x7701;&#x7EA7;&#x884C;&#x653F;&#x533A;&#x5730;&#x56FE;">
@@ -106,6 +111,7 @@
         </g>
       </svg>
       <button id="fit-map" class="map-float-button" type="button" aria-label="&#x9002;&#x914D;&#x5168;&#x56FE;">&#x2317; <span>&#x9002;&#x914D;&#x5168;&#x56FE;</span></button>
+      <button id="map-key-toggle" class="map-float-button map-float-button--key" type="button" aria-haspopup="dialog" hidden>Map key</button>
 
       <article id="region-card" class="region-card" aria-live="polite" aria-hidden="true">
         <div class="region-card__header">
@@ -156,6 +162,15 @@
       <div class="dialog-header"><h2 id="reset-dialog-title">&#x91CD;&#x7F6E;&#x5168;&#x90E8;&#x8DB3;&#x8FF9;&#xFF1F;</h2><button id="reset-dialog-close" class="icon-button" value="cancel" aria-label="&#x5173;&#x95ED;">&#xD7;</button></div>
       <p id="reset-dialog-text">&#x8FD9;&#x4F1A;&#x6E05;&#x9664;&#x672C;&#x8BBE;&#x5907;&#x4FDD;&#x5B58;&#x7684;&#x6240;&#x6709;&#x5730;&#x533A;&#x7B49;&#x7EA7;&#xFF0C;&#x4E14;&#x65E0;&#x6CD5;&#x64A4;&#x9500;&#x3002;</p>
       <div class="dialog-actions"><button id="reset-cancel" class="button button--quiet" value="cancel">&#x53D6;&#x6D88;</button><button id="reset-confirm" class="button button--danger" value="reset">&#x786E;&#x8BA4;&#x91CD;&#x7F6E;</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="map-key-dialog" class="app-dialog map-key-dialog" aria-labelledby="map-key-dialog-title">
+    <form method="dialog">
+      <div class="dialog-header"><h2 id="map-key-dialog-title">Short-name index</h2><button id="map-key-dialog-close" class="icon-button" value="cancel" aria-label="&#x5173;&#x95ED;">&#xD7;</button></div>
+      <p id="map-key-dialog-hint"></p>
+      <div id="map-key-dialog-list" class="map-key-list map-key-list--dialog"></div>
+      <div class="dialog-actions"><button id="map-key-dialog-cancel" class="button button--quiet" value="cancel">&#x5173;&#x95ED;</button></div>
     </form>
   </dialog>
 

@@ -20,8 +20,19 @@ const dom = {
   siteSubtitle: document.querySelector("#site-subtitle"),
   legendHeading: document.querySelector("#legend-heading"),
   legend: document.querySelector("#legend"),
+  englishMapKey: document.querySelector("#english-map-key"),
+  mapKeyTitle: document.querySelector("#map-key-title"),
+  mapKeyHint: document.querySelector("#map-key-hint"),
+  mapKeyList: document.querySelector("#map-key-list"),
   mapHint: document.querySelector("#map-hint"),
   fit: document.querySelector("#fit-map"),
+  mapKeyToggle: document.querySelector("#map-key-toggle"),
+  mapKeyDialog: document.querySelector("#map-key-dialog"),
+  mapKeyDialogTitle: document.querySelector("#map-key-dialog-title"),
+  mapKeyDialogHint: document.querySelector("#map-key-dialog-hint"),
+  mapKeyDialogList: document.querySelector("#map-key-dialog-list"),
+  mapKeyDialogClose: document.querySelector("#map-key-dialog-close"),
+  mapKeyDialogCancel: document.querySelector("#map-key-dialog-cancel"),
   regionCard: document.querySelector("#region-card"),
   regionKicker: document.querySelector("#region-kicker"),
   regionName: document.querySelector("#region-name"),
@@ -63,6 +74,7 @@ const dom = {
 const viewport = new MapViewport(dom.svg, dom.content);
 let selectedRegionId = null;
 let lastRegionTrigger = null;
+let regionCardAnchor = null;
 let toastTimer = null;
 
 function state() { return store.getState(); }
@@ -101,23 +113,53 @@ function divide(label, maxLength) {
   return [label.slice(0, cut), label.slice(cut)];
 }
 
-function englishLabel(region, shape) {
+function shapeBox(shape) {
   const box = shape?.getBBox?.();
-  const width = Math.max(box?.width || 1, .8);
-  const height = Math.max(box?.height || 1, .8);
-  // This is deliberately conservative: SVG text is wider than its character count suggests.
-  // If the full name cannot fit clearly, use the readable registry short name as one intact unit.
-  const capacity = Math.max(3, Math.floor(width / .46));
-  const full = region.en;
-  if (full.length <= capacity) return { lines: [full], short: false, vertical: false, rotate: false };
-  const words = full.split(" ");
-  if (words.length === 2 && words.every((word) => word.length <= capacity) && height >= 1.55) {
-    return { lines: words, short: false, vertical: true, rotate: false };
+  return {
+    x: box?.x ?? 0,
+    y: box?.y ?? 0,
+    width: Math.max(box?.width || 1, .8),
+    height: Math.max(box?.height || 1, .8)
+  };
+}
+
+function englishLabel(region, shape) {
+  const box = shapeBox(shape);
+  const safeWidth = Math.max(.38, box.width - .18);
+  const safeHeight = Math.max(.38, box.height - .16);
+  const measure = (value) => Math.max(1, value.replaceAll(" ", "").length) * .54;
+  const oneLineFont = (value) => Math.min(.53, safeHeight / .95, safeWidth / measure(value));
+  const fullFont = oneLineFont(region.en);
+  const words = region.en.split(" ");
+  const splitFont = words.length === 2
+    ? Math.min(.53, safeHeight / 2.2, safeWidth / Math.max(...words.map(measure)))
+    : 0;
+
+  // Labels are sized in SVG units. On a phone's fit-to-map overview, even a label that fits geometrically
+  // can render at 5 to 7 px. Switch to an unambiguous map key before that happens; users can then tap a
+  // readable two-digit marker and use the matching, clickable full-name index.
+  const mapWidth = dom.svg.getBoundingClientRect().width || 1;
+  const pixelsPerMapUnit = mapWidth / 30;
+  const minFullFont = Math.max(.45, 10 / pixelsPerMapUnit);
+  const minSplitFont = Math.max(.4, 9 / pixelsPerMapUnit);
+  const needsMapKey = fullFont < minFullFont && splitFont < minSplitFont;
+  if (needsMapKey) {
+    const roomyRegion = Math.min(safeWidth, safeHeight) >= 1.3;
+    const markerFont = Math.min(roomyRegion ? .9 : .7, safeHeight / .86, safeWidth / .82);
+    return { lines: [region.mapKey], short: true, marker: true, fontSize: Math.max(.5, markerFont), box };
   }
-  const short = region.shortEn;
-  // A rotated whole short name remains legible in a thin north-south region; never stack characters.
-  const rotate = height > width * 1.2 && short.length * .32 <= height;
-  return { lines: [short], short: true, vertical: false, rotate };
+  if (fullFont >= minFullFont) return { lines: [region.en], short: false, fontSize: fullFont, box };
+  if (splitFont >= minSplitFont) return { lines: words, short: false, fontSize: splitFont, box };
+
+  // This fallback is normally only reached while a resize is in progress. Keep it readable rather than
+  // returning to ambiguous two-letter abbreviations.
+  const shortFont = Math.max(.42, Math.min(.56, safeHeight / .95, safeWidth / measure(region.shortEn)));
+  return { lines: [region.shortEn], short: region.shortEn !== region.en, fontSize: shortFont, compact: true, box };
+}
+
+function labelCenter(shape) {
+  const box = shapeBox(shape);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
 function renderLabels() {
@@ -125,24 +167,25 @@ function renderLabels() {
   dom.labels.replaceChildren();
   REGIONS.forEach((region) => {
     const shape = document.getElementById(region.id);
-    const labelAnchor = lang === "en" && region.label.en ? region.label.en : region.label;
-    if (labelAnchor !== region.label) {
-      dom.labels.append(createSvg("line", {
-        x1: region.label.x, y1: region.label.y, x2: labelAnchor.x, y2: labelAnchor.y, class: "map-label-leader"
-      }));
-    }
+    const display = lang === "en"
+      ? englishLabel(region, shape)
+      : { lines: region.label.zhLines, short: false, vertical: region.label.zhLines.length > 1 };
+    const anchor = lang === "en" ? labelCenter(shape) : region.label;
     const label = createSvg("text", {
-      x: labelAnchor.x,
-      y: labelAnchor.y,
+      x: anchor.x,
+      y: anchor.y,
       class: "map-label",
       tabindex: "0",
       role: "button",
       "data-region": region.id
     });
-    const display = lang === "en"
-      ? englishLabel(region, shape)
-      : { lines: region.label.zhLines, short: false, vertical: region.label.zhLines.length > 1 };
-    appendLines(label, display.lines, display.vertical, lang);
+    if (lang === "en") {
+      label.setAttribute("font-size", display.fontSize);
+      label.classList.toggle("label-compact", Boolean(display.compact));
+      label.classList.toggle("map-marker", Boolean(display.marker));
+      if (display.marker) label.dataset.mapKey = region.mapKey;
+    }
+    appendLines(label, display.lines, Boolean(display.lines.length > 1), lang);
     label.dataset.short = String(display.short);
     label.setAttribute("aria-label", region[lang] + t("labelSuffix", { level: I18N[lang].levelNames[state().levels[region.id]] }));
     label.addEventListener("click", (event) => handleRegionSelection(region.id, event));
@@ -175,13 +218,34 @@ function handleRegionKeydown(regionId, event) {
   if (event.key === "Escape") closeRegion();
 }
 
+function triggerAnchor(trigger, clientX, clientY) {
+  if (Number.isFinite(clientX) && Number.isFinite(clientY) && (clientX !== 0 || clientY !== 0)) {
+    return { x: clientX, y: clientY };
+  }
+  const rect = trigger?.getBoundingClientRect?.();
+  return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: innerWidth / 2, y: innerHeight / 2 };
+}
+
+function selectRegion(regionId, trigger, clientX, clientY) {
+  selectedRegionId = regionId;
+  lastRegionTrigger = trigger;
+  regionCardAnchor = triggerAnchor(trigger, clientX, clientY);
+  renderRegionCard(regionCardAnchor.x, regionCardAnchor.y);
+}
+
 function handleRegionSelection(regionId, event) {
   if (viewport.shouldIgnoreClick()) return;
   event.preventDefault();
   event.stopPropagation();
-  selectedRegionId = regionId;
-  lastRegionTrigger = event.currentTarget;
-  renderRegionCard(event.clientX, event.clientY);
+  selectRegion(regionId, event.currentTarget, event.clientX, event.clientY);
+}
+
+function selectRegionFromKey(regionId, trigger) {
+  const shape = document.getElementById(regionId);
+  const rect = shape?.getBoundingClientRect();
+  dom.mapKeyDialog?.close();
+  selectRegion(regionId, trigger, rect ? rect.left + rect.width / 2 : undefined, rect ? rect.top + rect.height / 2 : undefined);
+  shape?.focus?.();
 }
 
 function setHover(regionId, active) {
@@ -212,7 +276,49 @@ function renderLegend() {
   });
 }
 
-function renderRegionCard(clientX, clientY) {
+
+function createMapKeyEntry(entryData) {
+  const { region, marker } = entryData;
+  const entry = document.createElement("button");
+  entry.type = "button";
+  entry.className = "map-key-entry";
+  entry.dataset.region = region.id;
+  entry.innerHTML = `<strong>${marker}</strong><span>${region.en}</span>`;
+  entry.addEventListener("click", () => selectRegionFromKey(region.id, entry));
+  return entry;
+}
+
+function renderMapKey() {
+  const isEnglish = state().lang === "en";
+  const entries = isEnglish
+    ? [...dom.labels.querySelectorAll('.map-label[data-short="true"]')]
+      .map((label) => {
+        const region = REGION_BY_ID[label.dataset.region];
+        return region && { region, marker: label.dataset.mapKey || label.textContent.trim() };
+      })
+      .filter(Boolean)
+    : [];
+  const visible = entries.length > 0;
+  dom.englishMapKey.hidden = !isEnglish || !visible;
+  dom.mapKeyToggle.hidden = !isEnglish || !visible;
+  if (!isEnglish || !visible) {
+    if (dom.mapKeyDialog.open) dom.mapKeyDialog.close();
+    return;
+  }
+  setText(dom.mapKeyTitle, t("mapKey"));
+  setText(dom.mapKeyHint, t("mapKeyHint"));
+  setText(dom.mapKeyToggle, t("mapKey"));
+  dom.mapKeyToggle.setAttribute("aria-label", t("mapKey"));
+  setText(dom.mapKeyDialogTitle, t("mapKey"));
+  setText(dom.mapKeyDialogHint, t("mapKeyHint"));
+  setText(dom.mapKeyDialogClose, "\u00d7");
+  dom.mapKeyDialogClose.setAttribute("aria-label", t("close"));
+  setText(dom.mapKeyDialogCancel, t("close"));
+  dom.mapKeyList.replaceChildren(...entries.map(createMapKeyEntry));
+  dom.mapKeyDialogList.replaceChildren(...entries.map(createMapKeyEntry));
+}
+
+function renderRegionCard(clientX = regionCardAnchor?.x, clientY = regionCardAnchor?.y) {
   if (!selectedRegionId) return;
   const current = state();
   const region = REGION_BY_ID[selectedRegionId];
@@ -243,7 +349,7 @@ function renderRegionCard(clientX, clientY) {
   placeRegionCard(clientX, clientY);
 }
 
-function placeRegionCard(clientX = innerWidth / 2, clientY = innerHeight / 2) {
+function placeRegionCard(clientX = regionCardAnchor?.x ?? innerWidth / 2, clientY = regionCardAnchor?.y ?? innerHeight / 2) {
   if (matchMedia("(max-width: 760px), (max-height: 600px)").matches) return;
   const margin = 16;
   const width = dom.regionCard.offsetWidth;
@@ -260,6 +366,7 @@ function placeRegionCard(clientX = innerWidth / 2, clientY = innerHeight / 2) {
 
 function closeRegion() {
   selectedRegionId = null;
+  regionCardAnchor = null;
   dom.regionCard.classList.remove("is-open");
   dom.regionCard.setAttribute("aria-hidden", "true");
   renderMapLevels();
@@ -314,6 +421,7 @@ function renderLanguage() {
   setText(dom.resetConfirm, t("resetConfirm"));
   renderLegend();
   renderLabels();
+  renderMapKey();
 }
 
 function renderAll() {
@@ -394,6 +502,7 @@ function closeExportMenu() { dom.exportMenu.hidden = true; dom.export.setAttribu
 function bindControls() {
   dom.language.addEventListener("click", () => store.setLanguage(state().lang === "zh" ? "en" : "zh"));
   dom.fit.addEventListener("click", () => viewport.fit());
+  dom.mapKeyToggle.addEventListener("click", () => { if (!dom.mapKeyDialog.open) dom.mapKeyDialog.showModal(); });
   dom.closeRegion.addEventListener("click", closeRegion);
   dom.name.addEventListener("click", openNameDialog);
   dom.copy.addEventListener("click", copyShareLink);
@@ -413,7 +522,11 @@ function bindControls() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") { closeExportMenu(); if (selectedRegionId) closeRegion(); }
   });
-  window.addEventListener("resize", () => { if (selectedRegionId) placeRegionCard(); });
+  window.addEventListener("resize", () => {
+    renderLabels();
+    renderMapKey();
+    if (selectedRegionId) placeRegionCard();
+  });
 }
 
 bindRegionFeatures();

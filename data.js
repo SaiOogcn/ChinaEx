@@ -51,6 +51,8 @@ export const I18N = {
     exportTitle: "{name}的制省等级：{level}",
     exportTitleAnonymous: "制省等级：{level}",
     shortNameIndex: "地图短名索引",
+    mapKey: "英文地图索引",
+    mapKeyHint: "地图中的编号会在这里对应到完整英文地区名称。",
     noName: "未设置名字",
     mapHint: "拖动地图，双指缩放；点按地区选择等级。",
     labelSuffix: "，当前等级 {level}",
@@ -104,6 +106,8 @@ export const I18N = {
     exportTitle: "{name}'s ChinaEX level: {level}",
     exportTitleAnonymous: "ChinaEX level: {level}",
     shortNameIndex: "Short-name index",
+    mapKey: "Map key",
+    mapKeyHint: "Numbered map markers are expanded here. Select one to open that region.",
     noName: "No name set",
     mapHint: "Drag to pan, pinch to zoom, and tap a region to set its level.",
     labelSuffix: ", current level {level}",
@@ -119,13 +123,7 @@ export const I18N = {
   }
 };
 
-// English anchors move dense labels to the nearest clear map space. The source point remains available for a leader line.
-const EN_LABEL_ANCHORS = [
-  null, null, null, null, null, [20.7, 13.35], [20.55, 10.05], [22.82, 10.05], [24.35, 12.3],
-  [25.55, 16.7], [24.1, 14.75], [24.65, 18.1], [23.15, 21.35], [20.1, 22.25], null, [19.65, 24.38],
-  [22.35, 24.38], null, null, null, [22.45, 19.2], null, null, null, null, [19.15, 11.95], [17.75, 14.25],
-  null, [22.55, 16.05], null, [17.1, 18.65], [25.8, 22], null, [17.25, 12.25]
-];
+// English labels are fitted inside their corresponding SVG paths at runtime.
 
 const REGION_TYPES = [
   "province", "province", "province", "autonomous-region", "province", "province", "municipality", "municipality", "province", "municipality",
@@ -171,7 +169,6 @@ export const REGIONS = [
   ["海南", "Hainan", "Hain.", 18, 25.4, ["海南"]],
   ["宁夏", "Ningxia", "Ning.", 17.5, 12.7, ["宁", "夏"]]
 ].map(([id, en, shortEn, x, y, zhLines], index) => {
-  const enAnchor = EN_LABEL_ANCHORS[index];
   return {
     id,
     zh: id,
@@ -180,7 +177,8 @@ export const REGIONS = [
     type: REGION_TYPES[index],
     search: { zh: id, en },
     export: { shortName: shortEn },
-    label: { x, y, zhLines, en: enAnchor && { x: enAnchor[0], y: enAnchor[1] } }
+    mapKey: String(index + 1).padStart(2, "0"),
+    label: { x, y, zhLines }
   };
 });
 
